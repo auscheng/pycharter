@@ -1,0 +1,30 @@
+{
+  "description": "Validation rules for Book data contract",
+  "version": "1.0.0",
+  "rules": {
+    "isbn": {
+      "min_length": {
+        "threshold": 10
+      }
+    },
+    "title": {
+      "min_length": {
+        "threshold": 1
+      },
+      "max_length": {
+        "threshold": 200
+      }
+    },
+    "price": {
+      "greater_than_or_equal_to": {
+        "threshold": 0
+      }
+    },
+    "pages": {
+      "is_positive": {
+        "threshold": 0
+      }
+    }
+  }
+}
+

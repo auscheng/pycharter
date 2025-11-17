@@ -16,7 +16,14 @@ Each example focuses on a specific service:
 ### 2. Metadata Store (`02_metadata_store.py`)
 - Store metadata in database
 - Retrieve stored schemas
+- Use built-in implementations (InMemory, MongoDB, PostgreSQL, Redis)
 - Implement custom database backends
+
+**Available Implementations**:
+- `InMemoryMetadataStore` - In-memory storage (testing/development)
+- `MongoDBMetadataStore` - MongoDB document storage (requires `pymongo`)
+- `PostgresMetadataStore` - PostgreSQL relational storage (requires `psycopg2-binary`)
+- `RedisMetadataStore` - Redis key-value storage (requires `redis`)
 
 **Run**: `python examples/02_metadata_store.py`
 
@@ -67,32 +74,83 @@ Demonstrates the improved workflow where schemas, metadata, and coercion/validat
 - Coercion and validation rules stored separately
 - Runtime function retrieves and combines all components automatically
 
-See [DATA_JOURNEY.md](../DATA_JOURNEY.md) for detailed documentation on the separated workflow.
+**Note**: This example may reference functions that are not yet implemented. See the main README for current capabilities.
 
-## Legacy Examples
+## Additional Examples
 
 ### Comprehensive Examples (`example_usage.py`)
 A comprehensive script demonstrating various features including:
-- Standard JSON Schema keywords
-- x-validators format
+- Standard JSON Schema keywords (minLength, maxLength, pattern, enum, etc.)
+- Coercion and validation (PyCharter extensions)
 - $ref and definitions
-- Format fields
-- Reverse conversion
+- Format fields (uuid, email, date-time)
+- Reverse conversion (Pydantic → JSON Schema)
 - Validation errors
 
 **Run**: `python examples/example_usage.py`
+
+**Note**: This example uses data from `data/schemas/` and `data/sample_data/` directories.
 
 ## Data Files
 
 All data files (schemas, sample data, contracts) are located in the `data/` directory at the project root:
 
-- `data/schemas/` - JSON Schema files
-- `data/sample_data/` - Sample data files
-- `data/contracts/` - Data contract files (YAML/JSON)
+- `data/examples/` - Complete example with all components:
+  - `book_models.py` - Pydantic models (developer-defined)
+  - `book_schema.json` - JSON Schema (generated from models)
+  - `book_coercion_rules.json` - Coercion rules
+  - `book_validation_rules.json` - Validation rules
+  - `book_metadata.json` - Business metadata
+  - `book_contract.yaml` - Consolidated contract (all components)
 
-See `data/README.md` for more information.
+**Contract Format**: Contracts are YAML or JSON files with the following structure:
+```yaml
+schema:                    # JSON Schema with coercion/validation
+  type: object
+  properties:
+    field_name:
+      type: string
+      coercion: coerce_to_string  # Optional: PyCharter extension
+      validations:                 # Optional: PyCharter extension
+        min_length: {threshold: 1}
+
+metadata:                  # Version and description
+  version: "1.0.0"
+  description: "Contract description"
+
+ownership:                 # Ownership information
+  owner: team-name
+  team: department-name
+
+governance_rules:          # Governance policies
+  data_retention:
+    days: 365
+```
+
+See `data/README.md` for detailed information about the data structure and formats.
 
 ## Running Examples
+
+### Prerequisites
+
+1. **Install the package**:
+   ```bash
+   pip install -e .
+   # or with dev dependencies
+   pip install -e ".[dev]"
+   ```
+
+2. **Optional dependencies** (for specific metadata stores):
+   ```bash
+   # For MongoDB
+   pip install pymongo
+   
+   # For PostgreSQL
+   pip install psycopg2-binary
+   
+   # For Redis
+   pip install redis
+   ```
 
 ### Run Individual Examples
 
@@ -115,6 +173,20 @@ for script in examples/0*.py examples/complete_workflow.py; do
 done
 ```
 
+### Testing Metadata Stores
+
+To test all metadata store implementations with your local Docker containers:
+
+```bash
+python tests/test_metadata_stores.py
+```
+
+This will test:
+- InMemoryMetadataStore (always available)
+- MongoDBMetadataStore (requires MongoDB running)
+- PostgresMetadataStore (requires PostgreSQL running)
+- RedisMetadataStore (requires Redis running)
+
 ## Example Output
 
 Each example script provides:
@@ -133,7 +205,51 @@ Each example script provides:
 
 ## Notes
 
-- All examples use data from the `data/` directory
-- Examples are self-contained and can be run independently
-- Some examples create temporary files (like generated models) that can be cleaned up
-- Make sure you have the package installed: `pip install -e .` or `make install-dev`
+- **Data Location**: All examples use data from the `data/` directory
+  - `data/examples/` - Complete book example with all components
+  - `data/schemas/` - JSON Schema files
+  - `data/sample_data/` - Sample data files
+- **Self-Contained**: Examples are self-contained and can be run independently
+- **Temporary Files**: Some examples may create temporary files (like generated models) that can be cleaned up
+- **Package Installation**: Make sure you have the package installed: `pip install -e .` or `make install-dev`
+- **Metadata Stores**: The `InMemoryMetadataStore` is always available. Other stores require their respective database drivers to be installed
+- **Contract Files**: Contract files should be in YAML or JSON format with `schema`, `metadata`, `ownership`, and `governance_rules` sections
+
+## Quick Start Example
+
+Here's a quick example showing the basic workflow:
+
+```python
+from pycharter import (
+    parse_contract_file,
+    InMemoryMetadataStore,
+    from_dict,
+    validate,
+)
+
+# 1. Parse contract
+metadata = parse_contract_file("data/examples/book_contract.yaml")
+
+# 2. Store in metadata store
+store = InMemoryMetadataStore()
+store.connect()
+schema_id = store.store_schema("book", metadata.schema, version="1.0.0")
+store.store_ownership(schema_id, owner=metadata.ownership.get("owner"))
+
+# 3. Generate Pydantic model
+stored_schema = store.get_schema(schema_id)
+BookModel = from_dict(stored_schema, "Book")
+
+# 4. Validate data
+result = validate(BookModel, {
+    "isbn": "9780123456789",
+    "title": "Python Programming",
+    "author": {"name": "John Doe"},
+    "price": 29.99,
+    "pages": 500,
+    "published_date": "2024-01-15T10:00:00Z"
+})
+
+if result.is_valid:
+    print(f"Valid book: {result.data.title}")
+```

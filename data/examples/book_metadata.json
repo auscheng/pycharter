@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "description": "Book data contract for e-commerce and inventory management",
+  "created": "2024-01-15",
+  "last_updated": "2024-01-20",
+  "owner": "product-team",
+  "team": "data-engineering",
+  "contact": "product-team@example.com",
+  "governance_rules": {
+    "data_retention": {
+      "days": 2555,
+      "description": "Book data should be retained for 7 years for compliance"
+    },
+    "pii_fields": {
+      "fields": [],
+      "description": "No PII fields in book data"
+    },
+    "access_control": {
+      "level": "public",
+      "description": "Book data is publicly accessible"
+    },
+    "data_quality": {
+      "required_checks": [
+        "isbn_format_validation",
+        "price_non_negative",
+        "pages_positive"
+      ],
+      "description": "Data quality checks for book records"
+    }
+  },
+  "business_rules": {
+    "pricing": {
+      "currency": "USD",
+      "min_price": 0.0,
+      "max_price": 1000.0,
+      "description": "Book prices must be between $0 and $1000"
+    },
+    "inventory": {
+      "track_stock": true,
+      "low_stock_threshold": 10,
+      "description": "Track inventory and alert when stock is low"
+    }
+  }
+}
+

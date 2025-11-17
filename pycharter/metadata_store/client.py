@@ -324,6 +324,8 @@ def _merge_validation_rules(schema: Dict[str, Any], validation_rules: Dict[str, 
     """
     Merge validation rules into schema properties.
     
+    Supports nested field paths using dot notation (e.g., "author.name").
+    
     Args:
         schema: Schema dictionary (modified in place)
         validation_rules: Dictionary mapping field names to validation configurations
@@ -331,9 +333,22 @@ def _merge_validation_rules(schema: Dict[str, Any], validation_rules: Dict[str, 
     if "properties" not in schema:
         return
     
-    for field_name, field_validations in validation_rules.items():
-        if field_name in schema["properties"]:
-            if "validations" not in schema["properties"][field_name]:
-                schema["properties"][field_name]["validations"] = {}
-            schema["properties"][field_name]["validations"].update(field_validations)
+    for field_path, field_validations in validation_rules.items():
+        # Handle nested fields with dot notation (e.g., "author.name")
+        if "." in field_path:
+            parts = field_path.split(".")
+            if len(parts) == 2:
+                parent_field, child_field = parts
+                if parent_field in schema["properties"]:
+                    parent_prop = schema["properties"][parent_field]
+                    if "properties" in parent_prop and child_field in parent_prop["properties"]:
+                        if "validations" not in parent_prop["properties"][child_field]:
+                            parent_prop["properties"][child_field]["validations"] = {}
+                        parent_prop["properties"][child_field]["validations"].update(field_validations)
+        else:
+            # Handle top-level fields
+            if field_path in schema["properties"]:
+                if "validations" not in schema["properties"][field_path]:
+                    schema["properties"][field_path]["validations"] = {}
+                schema["properties"][field_path]["validations"].update(field_validations)
 

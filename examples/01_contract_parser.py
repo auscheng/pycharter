@@ -20,7 +20,7 @@ def example_parse_from_file():
     print("Example 1a: Parsing Contract from YAML File")
     print("=" * 70)
     
-    contract_path = DATA_DIR / "contracts" / "user_contract.yaml"
+    contract_path = DATA_DIR / "examples" / "book_contract.yaml"
     
     # Parse the contract file
     metadata = parse_contract_file(str(contract_path))
@@ -81,7 +81,7 @@ def example_access_components():
     print("Example 1c: Accessing Decomposed Components")
     print("=" * 70)
     
-    contract_path = DATA_DIR / "contracts" / "user_contract.yaml"
+    contract_path = DATA_DIR / "examples" / "book_contract.yaml"
     metadata = parse_contract_file(str(contract_path))
     
     # Access individual components

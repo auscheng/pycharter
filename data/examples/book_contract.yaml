@@ -1,0 +1,140 @@
+schema:
+  type: object
+  title: Book
+  description: Book model with nested author and metadata.
+  properties:
+    isbn:
+      description: International Standard Book Number
+      title: Isbn
+      type: string
+      coercion: coerce_to_string
+      validations:
+        min_length:
+          threshold: 10
+    title:
+      description: Book title
+      maxLength: 200
+      minLength: 1
+      title: Title
+      type: string
+      validations:
+        min_length:
+          threshold: 1
+        max_length:
+          threshold: 200
+    author:
+      description: Author information.
+      properties:
+        name:
+          description: Author's full name
+          maxLength: 100
+          minLength: 1
+          title: Name
+          type: string
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: Author's email address
+          title: Email
+        bio:
+          anyOf:
+          - maxLength: 500
+            type: string
+          - type: 'null'
+          default: null
+          description: Author biography
+          title: Bio
+      required:
+      - name
+      title: Author
+      type: object
+    description:
+      anyOf:
+      - maxLength: 2000
+        type: string
+      - type: 'null'
+      default: null
+      description: Book description
+      title: Description
+    price:
+      description: Book price in USD
+      minimum: 0
+      title: Price
+      type: number
+      coercion: coerce_to_float
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    pages:
+      description: Number of pages
+      exclusiveMinimum: 0
+      title: Pages
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        is_positive:
+          threshold: 0
+    published_date:
+      description: Publication date
+      format: date-time
+      title: Published Date
+      type: string
+      coercion: coerce_to_string
+    tags:
+      anyOf:
+      - items:
+          type: string
+        type: array
+      - type: 'null'
+      default: null
+      description: Book tags/categories
+      title: Tags
+    in_stock:
+      default: true
+      description: Whether book is in stock
+      title: In Stock
+      type: boolean
+  required:
+  - isbn
+  - title
+  - author
+  - price
+  - pages
+  - published_date
+metadata:
+  version: 1.0.0
+  description: Book data contract for e-commerce and inventory management
+  created: '2024-01-15'
+  last_updated: '2024-01-20'
+ownership:
+  owner: product-team
+  team: data-engineering
+  contact: product-team@example.com
+governance_rules:
+  data_retention:
+    days: 2555
+    description: Book data should be retained for 7 years for compliance
+  pii_fields:
+    fields: []
+    description: No PII fields in book data
+  access_control:
+    level: public
+    description: Book data is publicly accessible
+  data_quality:
+    required_checks:
+    - isbn_format_validation
+    - price_non_negative
+    - pages_positive
+    description: Data quality checks for book records
+business_rules:
+  pricing:
+    currency: USD
+    min_price: 0.0
+    max_price: 1000.0
+    description: Book prices must be between $0 and $1000
+  inventory:
+    track_stock: true
+    low_stock_threshold: 10
+    description: Track inventory and alert when stock is low

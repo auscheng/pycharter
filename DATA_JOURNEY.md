@@ -29,7 +29,7 @@ Runtime Validation (Production Systems)
 - Developers add technical specifications: data types, formats (UUID, email, date-time), validation constraints (minLength, maxLength, pattern), and technical requirements
 - Together they create a **data contract file** (YAML or JSON) that serves as the single source of truth
 
-**Contract File Structure** (`data/contracts/user_contract.yaml`):
+**Contract File Structure** (`data/examples/book_contract.yaml`):
 
 ```yaml
 schema:                    # Developer: Technical schema definition
@@ -117,7 +117,7 @@ metadata:                  # Both: Versioning and documentation
 from pycharter import parse_contract_file, ContractMetadata
 
 # Parse the contract file (YAML or JSON)
-metadata = parse_contract_file("data/contracts/user_contract.yaml")
+metadata = parse_contract_file("data/examples/book_contract.yaml")
 
 # Access decomposed components
 schema = metadata.schema              # JSON Schema for model generation
@@ -382,7 +382,7 @@ from pycharter import (
 # ============================================================
 
 # Step 1: Parse contract (from business + developer collaboration)
-metadata = parse_contract_file("data/contracts/user_contract.yaml")
+metadata = parse_contract_file("data/examples/book_contract.yaml")
 
 # Step 2: Store in database
 store = MyMetadataStore(connection_string="postgresql://...")
@@ -485,7 +485,7 @@ Validation uses updated rules
 **Code**:
 ```python
 # Parse new contract version
-metadata_v2 = parse_contract_file("data/contracts/user_contract_v2.yaml")
+metadata_v2 = parse_contract_file("data/examples/book_contract.yaml")
 
 # Store as new version
 schema_id_v2 = store.store_schema(

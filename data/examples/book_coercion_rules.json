@@ -1,0 +1,11 @@
+{
+  "description": "Coercion rules for Book data contract",
+  "version": "1.0.0",
+  "rules": {
+    "isbn": "coerce_to_string",
+    "price": "coerce_to_float",
+    "pages": "coerce_to_integer",
+    "published_date": "coerce_to_string"
+  }
+}
+

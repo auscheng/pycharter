@@ -118,9 +118,17 @@ def _basic_validation(schema: Dict[str, Any]) -> None:
         raise ValueError("Schema must be a dictionary")
     
     # Check for required JSON Schema fields
-    if "type" not in schema and "properties" not in schema and "$ref" not in schema:
+    # Note: anyOf, oneOf, allOf are also valid JSON Schema constructs
+    if (
+        "type" not in schema
+        and "properties" not in schema
+        and "$ref" not in schema
+        and "anyOf" not in schema
+        and "oneOf" not in schema
+        and "allOf" not in schema
+    ):
         raise ValueError(
-            "Schema must have 'type', 'properties', or '$ref' field to be valid JSON Schema"
+            "Schema must have 'type', 'properties', '$ref', 'anyOf', 'oneOf', or 'allOf' field to be valid JSON Schema"
         )
     
     # Validate properties if present
@@ -132,6 +140,11 @@ def _basic_validation(schema: Dict[str, Any]) -> None:
         for prop_name, prop_schema in schema["properties"].items():
             if not isinstance(prop_schema, dict):
                 raise ValueError(f"Property '{prop_name}' must be a dictionary")
+            
+            # Skip PyCharter extension fields when recursively validating
+            # (coercion and validations are not schema properties)
+            if prop_name in ("coercion", "validations"):
+                continue
             
             # Recursively validate nested schemas
             _basic_validation(prop_schema)
