@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/order.json",
+  "title": "Order",
+  "type": "object",
+  "required": ["order_id", "customer", "items", "status"],
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The unique identifier for the order.",
+      "x-validators": [
+        { "name": "non_empty_string" }
+      ]
+    },
+    "customer": {
+      "description": "The customer placing the order.",
+      "$ref": "#/definitions/Customer"
+    },
+    "items": {
+      "type": "array",
+      "description": "A list of products in the order.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Product"
+      }
+    },
+    "status": {
+      "type": "string",
+      "description": "The current status of the order.",
+      "enum": ["pending", "shipped", "delivered", "cancelled"],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes for the order, will be coerced to lowercase.",
+      "x-validators": [
+        {
+          "name": "coerce_to_lowercase",
+          "pre": true
+        }
+      ]
+    },
+    "total": {
+      "type": "number",
+      "description": "Total order amount",
+      "minimum": 0
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Order creation timestamp"
+    }
+  },
+  "definitions": {
+    "Customer": {
+      "title": "Customer",
+      "type": "object",
+      "required": ["customer_id", "email"],
+      "properties": {
+        "customer_id": {
+          "type": "integer",
+          "description": "The unique identifier for the customer.",
+          "x-validators": [
+            { "name": "is_positive" }
+          ]
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Customer email address"
+        },
+        "name": {
+          "type": "string",
+          "description": "Customer full name",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "signup_source": {
+          "type": "string",
+          "description": "The source of the customer signup.",
+          "enum": ["web", "mobile", "api"]
+        }
+      }
+    },
+    "Product": {
+      "title": "Product",
+      "type": "object",
+      "required": ["sku", "quantity"],
+      "properties": {
+        "sku": {
+          "type": "string",
+          "description": "Stock Keeping Unit, in the format ABC-123456.",
+          "x-validators": [
+            {
+              "name": "matches_regex",
+              "params": { "pattern": "^[A-Z0-9]{3}-[A-Z0-9]{6}$" }
+            }
+          ]
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "The quantity of the product ordered.",
+          "minimum": 1,
+          "x-validators": [
+            { "name": "is_positive" }
+          ]
+        },
+        "price": {
+          "type": "number",
+          "description": "Unit price",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "description": "Product name"
+        }
+      }
+    }
+  }
+}

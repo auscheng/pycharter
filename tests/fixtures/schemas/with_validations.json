@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "description": "Schema demonstrating validation functionality",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Code with length and character restrictions",
+      "validations": {
+        "min_length": {
+          "threshold": 3
+        },
+        "max_length": {
+          "threshold": 10
+        },
+        "no_capital_characters": null
+      }
+    },
+    "status": {
+      "type": "string",
+      "description": "Status with allowed values only",
+      "validations": {
+        "only_allow": {
+          "allowed_values": ["active", "inactive", "pending"]
+        }
+      }
+    },
+    "score": {
+      "type": "number",
+      "description": "Score with range validation",
+      "validations": {
+        "greater_than_or_equal_to": {
+          "threshold": 0
+        },
+        "less_than_or_equal_to": {
+          "threshold": 100
+        }
+      }
+    }
+  },
+  "required": ["code", "status"]
+}
+

@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "description": "Schema with both coercion and validation",
+  "properties": {
+    "destination": {
+      "type": "string",
+      "coercion": "coerce_to_string",
+      "validations": {
+        "min_length": {
+          "threshold": 3
+        },
+        "max_length": {
+          "threshold": 3
+        },
+        "no_capital_characters": null,
+        "only_allow": {
+          "allowed_values": ["abc", "def", "ghi", "jkl"]
+        }
+      },
+      "description": "Airport code (3 letters, lowercase, specific values only)"
+    },
+    "distance": {
+      "type": "number",
+      "coercion": "coerce_to_float",
+      "validations": {
+        "greater_than_or_equal_to": {
+          "threshold": 0
+        }
+      },
+      "description": "Distance in miles (must be non-negative)"
+    }
+  },
+  "required": ["destination", "distance"]
+}
+

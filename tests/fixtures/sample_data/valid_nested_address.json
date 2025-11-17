@@ -1,0 +1,11 @@
+{
+  "name": "Bob Johnson",
+  "address": {
+    "street": "123 Main Street",
+    "city": "New York",
+    "state": "NY",
+    "zipcode": "10001",
+    "country": "USA"
+  }
+}
+

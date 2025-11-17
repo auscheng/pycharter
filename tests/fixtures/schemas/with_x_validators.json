@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "format": "uuid",
+      "x-validators": [
+        { "name": "non_empty_string" }
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "x-validators": [
+        {
+          "name": "coerce_to_lowercase",
+          "pre": true
+        }
+      ]
+    },
+    "quantity": {
+      "type": "integer",
+      "x-validators": [
+        {
+          "name": "is_positive",
+          "params": { "threshold": 0 }
+        }
+      ]
+    },
+    "sku": {
+      "type": "string",
+      "x-validators": [
+        {
+          "name": "matches_regex",
+          "params": { "pattern": "^[A-Z0-9]{3}-[A-Z0-9]{6}$" }
+        }
+      ]
+    }
+  }
+}
+

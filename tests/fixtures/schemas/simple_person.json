@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "description": "A simple person schema with basic fields",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Person's full name"
+    },
+    "age": {
+      "type": "integer",
+      "description": "Person's age in years"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    }
+  },
+  "required": ["name", "age"]
+}
+

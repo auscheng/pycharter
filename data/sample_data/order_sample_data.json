@@ -1,0 +1,28 @@
+{
+  "order_id": "123e4567-e89b-12d3-a456-426614174000",
+  "customer": {
+    "customer_id": 1001,
+    "email": "alice@example.com",
+    "name": "Alice Smith",
+    "signup_source": "web"
+  },
+  "items": [
+    {
+      "sku": "ABC-123456",
+      "quantity": 2,
+      "price": 29.99,
+      "name": "Widget A"
+    },
+    {
+      "sku": "DEF-789012",
+      "quantity": 1,
+      "price": 49.99,
+      "name": "Widget B"
+    }
+  ],
+  "status": "pending",
+  "notes": "PLEASE HANDLE WITH CARE",
+  "total": 109.97,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+

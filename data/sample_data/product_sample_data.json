@@ -1,0 +1,35 @@
+{
+  "id": 1001,
+  "name": "Premium Laptop",
+  "category": {
+    "id": 10,
+    "name": "Electronics",
+    "parent": {
+      "id": 1,
+      "name": "Root Category"
+    }
+  },
+  "variants": [
+    {
+      "sku": "LAP-001015",
+      "size": "small",
+      "price": 999.99,
+      "inventory": {
+        "quantity": 10,
+        "location": "Warehouse A"
+      }
+    },
+    {
+      "sku": "LAP-001017",
+      "size": "large",
+      "price": 1299.99,
+      "inventory": {
+        "quantity": 5,
+        "location": "Warehouse B"
+      }
+    }
+  ],
+  "description": "High-performance laptop with latest processor and graphics",
+  "active": true
+}
+

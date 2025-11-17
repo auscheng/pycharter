@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "description": "Schema with array of nested objects",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "integer"
+          }
+        },
+        "required": ["name", "price"]
+      },
+      "description": "List of cart items"
+    }
+  },
+  "required": ["items"]
+}
+

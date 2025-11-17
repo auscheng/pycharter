@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "description": "User schema with default values",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "Unique username"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the user account is active"
+    },
+    "role": {
+      "type": "string",
+      "default": "user",
+      "description": "User role"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "Account creation timestamp"
+    }
+  },
+  "required": ["username"]
+}
+

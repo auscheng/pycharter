@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "description": "Schema with simple arrays",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of tags"
+    },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "description": "List of scores"
+    },
+    "prices": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "List of prices"
+    }
+  }
+}
+

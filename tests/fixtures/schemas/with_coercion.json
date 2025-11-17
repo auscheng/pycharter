@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "description": "Schema demonstrating coercion functionality",
+  "properties": {
+    "id": {
+      "type": "string",
+      "coercion": "coerce_to_string",
+      "description": "ID that will be coerced to string"
+    },
+    "count": {
+      "type": "integer",
+      "coercion": "coerce_to_integer",
+      "description": "Count that will be coerced to integer"
+    },
+    "price": {
+      "type": "number",
+      "coercion": "coerce_to_float",
+      "description": "Price that will be coerced to float"
+    },
+    "is_active": {
+      "type": "boolean",
+      "coercion": "coerce_to_boolean",
+      "description": "Active status that will be coerced to boolean"
+    }
+  },
+  "required": ["id", "count"]
+}
+

@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User",
+  "type": "object",
+  "required": ["username", "email", "profile"],
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "Unique username",
+      "minLength": 3,
+      "maxLength": 30,
+      "pattern": "^[a-z0-9_]+$",
+      "x-validators": [
+        {
+          "name": "no_capital_characters"
+        }
+      ]
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email address"
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lastName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "avatar": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": ["firstName", "lastName"]
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2
+        },
+        "zipcode": {
+          "type": "string",
+          "pattern": "^\\d{5}(-\\d{4})?$"
+        },
+        "country": {
+          "type": "string",
+          "default": "USA"
+        }
+      },
+      "required": ["city", "state"]
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": ["light", "dark", "auto"],
+          "default": "light"
+        },
+        "notifications": {
+          "type": "boolean",
+          "default": true
+        },
+        "language": {
+          "type": "string",
+          "enum": ["en", "es", "fr", "de"],
+          "default": "en"
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0,
+      "maxItems": 10,
+      "uniqueItems": true
+    },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      }
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

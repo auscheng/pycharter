@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "description": "Person with nested address object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "address": {
+      "type": "object",
+      "description": "Physical address",
+      "properties": {
+        "street": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "zipcode": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string",
+          "default": "USA"
+        }
+      },
+      "required": ["street", "city", "state", "zipcode"]
+    }
+  },
+  "required": ["name", "address"]
+}
+

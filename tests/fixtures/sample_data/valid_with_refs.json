@@ -1,0 +1,17 @@
+{
+  "customer": {
+    "name": "Alice",
+    "email": "alice@example.com"
+  },
+  "items": [
+    {
+      "sku": "PROD-001",
+      "price": 29.99
+    },
+    {
+      "sku": "PROD-002",
+      "price": 49.99
+    }
+  ]
+}
+

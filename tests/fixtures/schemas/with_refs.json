@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "customer": {
+      "$ref": "#/definitions/Customer"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Product"
+      }
+    }
+  },
+  "definitions": {
+    "Customer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        }
+      },
+      "required": ["name", "email"]
+    },
+    "Product": {
+      "type": "object",
+      "properties": {
+        "sku": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        }
+      },
+      "required": ["sku", "price"]
+    }
+  }
+}
+

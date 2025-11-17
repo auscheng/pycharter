@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pycharter"
+version = "0.0.1"
+description = "A Python package for data contract management with five core services: contract parsing, metadata storage, Pydantic generation, JSON Schema conversion, and runtime validation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "pydantic>=2.0.0",
+    "jsonschema>=4.0.0",
+]
+authors = [
+    {name = "semantic developers", email = "na@example.com"},
+]
+keywords = ["semantic", "python", "pydantic", "contract", "validation", "schema"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/auscheng/schemantic"
+Documentation = "https://github.com/auscheng/schemantic#readme"
+Repository = "https://github.com/auscheng/schemantic"
+Issues = "https://github.com/auscheng/schemantic/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "build>=0.10.0",
+    "twine>=4.0.0",
+    "jupyterlab>=4.0.0",
+    "ipykernel>=6.0.0",
+]
+
+[tool.setuptools]
+packages = ["pycharter"]
+
+[tool.setuptools.package-data]
+pycharter = ["py.typed"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+]
+
