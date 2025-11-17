@@ -183,6 +183,117 @@ class MetadataStoreClient:
         """
         raise NotImplementedError("Subclasses must implement get_metadata()")
     
+    def store_coercion_rules(
+        self,
+        schema_id: str,
+        coercion_rules: Dict[str, Any],
+        version: Optional[str] = None,
+    ) -> str:
+        """
+        Store coercion rules for a schema.
+        
+        Coercion rules specify how to transform data before validation.
+        Format: {"field_name": "coercion_function_name", ...}
+        
+        Args:
+            schema_id: Schema identifier
+            coercion_rules: Dictionary mapping field names to coercion function names
+            version: Optional version string
+            
+        Returns:
+            Coercion rules ID or identifier
+        """
+        raise NotImplementedError("Subclasses must implement store_coercion_rules()")
+    
+    def get_coercion_rules(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve coercion rules for a schema.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest)
+            
+        Returns:
+            Coercion rules dictionary or None if not found
+        """
+        raise NotImplementedError("Subclasses must implement get_coercion_rules()")
+    
+    def store_validation_rules(
+        self,
+        schema_id: str,
+        validation_rules: Dict[str, Any],
+        version: Optional[str] = None,
+    ) -> str:
+        """
+        Store validation rules for a schema.
+        
+        Validation rules specify additional checks after standard validation.
+        Format: {"field_name": {"validator_name": config, ...}, ...}
+        
+        Args:
+            schema_id: Schema identifier
+            validation_rules: Dictionary mapping field names to validation configurations
+            version: Optional version string
+            
+        Returns:
+            Validation rules ID or identifier
+        """
+        raise NotImplementedError("Subclasses must implement store_validation_rules()")
+    
+    def get_validation_rules(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve validation rules for a schema.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest)
+            
+        Returns:
+            Validation rules dictionary or None if not found
+        """
+        raise NotImplementedError("Subclasses must implement get_validation_rules()")
+    
+    def get_complete_schema(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve complete schema with coercion and validation rules merged.
+        
+        This is a convenience method that retrieves schema, coercion rules, and
+        validation rules, then merges them into a single schema dictionary.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest)
+            
+        Returns:
+            Complete schema dictionary with coercion and validation rules merged,
+            or None if schema not found
+        """
+        schema = self.get_schema(schema_id)
+        if not schema:
+            return None
+        
+        # Deep copy to avoid modifying original
+        import copy
+        complete_schema = copy.deepcopy(schema)
+        
+        # Get coercion rules
+        coercion_rules = self.get_coercion_rules(schema_id, version)
+        if coercion_rules:
+            _merge_coercion_rules(complete_schema, coercion_rules)
+        
+        # Get validation rules
+        validation_rules = self.get_validation_rules(schema_id, version)
+        if validation_rules:
+            _merge_validation_rules(complete_schema, validation_rules)
+        
+        return complete_schema
+    
     def __enter__(self):
         """Context manager entry."""
         self.connect()
@@ -191,4 +302,38 @@ class MetadataStoreClient:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.disconnect()
+
+
+def _merge_coercion_rules(schema: Dict[str, Any], coercion_rules: Dict[str, Any]) -> None:
+    """
+    Merge coercion rules into schema properties.
+    
+    Args:
+        schema: Schema dictionary (modified in place)
+        coercion_rules: Dictionary mapping field names to coercion function names
+    """
+    if "properties" not in schema:
+        return
+    
+    for field_name, coercion_name in coercion_rules.items():
+        if field_name in schema["properties"]:
+            schema["properties"][field_name]["coercion"] = coercion_name
+
+
+def _merge_validation_rules(schema: Dict[str, Any], validation_rules: Dict[str, Any]) -> None:
+    """
+    Merge validation rules into schema properties.
+    
+    Args:
+        schema: Schema dictionary (modified in place)
+        validation_rules: Dictionary mapping field names to validation configurations
+    """
+    if "properties" not in schema:
+        return
+    
+    for field_name, field_validations in validation_rules.items():
+        if field_name in schema["properties"]:
+            if "validations" not in schema["properties"][field_name]:
+                schema["properties"][field_name]["validations"] = {}
+            schema["properties"][field_name]["validations"].update(field_validations)
 

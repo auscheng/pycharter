@@ -55,6 +55,20 @@ Demonstrates all five services working together in a complete data production jo
 
 **Run**: `python examples/complete_workflow.py`
 
+### Separated Workflow (`06_separated_workflow.py`)
+Demonstrates the improved workflow where schemas, metadata, and coercion/validation rules are stored separately:
+1. Business provides metadata → 2. Developer writes Pydantic model → 3. Both define rules → 4. Store separately → 5. Runtime validation
+
+**Run**: `python examples/06_separated_workflow.py`
+
+**Key Features**:
+- Business metadata stored separately
+- Developer schemas (Pydantic → JSON Schema) stored separately
+- Coercion and validation rules stored separately
+- Runtime function retrieves and combines all components automatically
+
+See [DATA_JOURNEY.md](../DATA_JOURNEY.md) for detailed documentation on the separated workflow.
+
 ## Legacy Examples
 
 ### Comprehensive Examples (`example_usage.py`)

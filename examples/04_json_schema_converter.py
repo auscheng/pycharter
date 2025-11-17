@@ -354,6 +354,78 @@ def example_nested_round_trip():
     print(f"     Nested category preserved: {rt_category.get('type') == 'object'}")
 
 
+def example_nested_from_separate_modules():
+    """Demonstrate nested models from separate files/modules."""
+    print("\n" + "=" * 70)
+    print("Example 4j: Nested Models from Separate Modules")
+    print("=" * 70)
+    
+    import tempfile
+    import os
+    import importlib.util
+    
+    # Create a temporary module file with a nested model
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        f.write('''from pydantic import BaseModel, Field
+
+class Address(BaseModel):
+    """Address model from separate module."""
+    street: str = Field(..., min_length=1, description="Street address")
+    city: str = Field(..., min_length=1, description="City name")
+    state: str = Field(..., min_length=2, max_length=2, description="State code")
+    zipcode: str = Field(..., pattern="^\\\\d{5}(-\\\\d{4})?$", description="ZIP code")
+''')
+        temp_module_path = f.name
+    
+    try:
+        # Import the module dynamically
+        spec = importlib.util.spec_from_file_location("temp_address_module", temp_module_path)
+        address_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(address_module)
+        Address = address_module.Address
+        
+        # Create a model in this file that uses the imported model
+        class Person(BaseModel):
+            """Person model using Address from separate module."""
+            name: str = Field(..., min_length=1)
+            age: int = Field(..., ge=0, le=150)
+            address: Address  # Nested model from separate module
+        
+        # Convert to schema
+        schema = to_dict(Person)
+        
+        print(f"\n✓ Converted Person model with Address from separate module")
+        print(f"  Top-level properties: {list(schema.get('properties', {}).keys())}")
+        
+        # Check nested address schema
+        address_prop = schema.get('properties', {}).get('address', {})
+        print(f"\n  Address (from separate module) schema:")
+        print(f"    Type: {address_prop.get('type')}")
+        print(f"    Properties: {list(address_prop.get('properties', {}).keys())}")
+        print(f"    Required: {address_prop.get('required', [])}")
+        
+        # Verify constraints from separate module are preserved
+        address_street = address_prop.get('properties', {}).get('street', {})
+        address_zipcode = address_prop.get('properties', {}).get('zipcode', {})
+        print(f"\n  Constraints from separate module preserved:")
+        print(f"    Address.street minLength: {address_street.get('minLength')}")
+        print(f"    Address.zipcode pattern: {address_zipcode.get('pattern')}")
+        
+        print(f"\n✓ Key Point: Nested models can be defined in separate files/modules!")
+        print(f"  The converter works with any BaseModel class accessible in Python runtime.")
+        print(f"  It doesn't matter where the model is defined - same file, different file,")
+        print(f"  or even dynamically imported modules.")
+        
+    except Exception as e:
+        print(f"\n✗ Error testing separate modules: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        # Clean up
+        if os.path.exists(temp_module_path):
+            os.unlink(temp_module_path)
+
+
 if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("PyCharter - JSON Schema Converter Service Examples")
@@ -369,8 +441,8 @@ if __name__ == "__main__":
     example_nested_arrays()
     example_deeply_nested()
     example_nested_round_trip()
+    example_nested_from_separate_modules()
     
     print("\n" + "=" * 70)
     print("✓ All JSON Schema Converter examples completed!")
     print("=" * 70 + "\n")
-

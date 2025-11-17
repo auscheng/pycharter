@@ -62,8 +62,11 @@ from pycharter.json_schema_converter import (
 
 # Service 5: Runtime Validator
 from pycharter.runtime_validator import (
+    get_model_from_store,
     validate,
     validate_batch,
+    validate_batch_with_store,
+    validate_with_store,
     ValidationResult,
 )
 
@@ -93,5 +96,8 @@ __all__ = [
     # Runtime Validator
     "validate",
     "validate_batch",
+    "validate_with_store",
+    "validate_batch_with_store",
+    "get_model_from_store",
     "ValidationResult",
 ]

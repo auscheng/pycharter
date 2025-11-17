@@ -317,6 +317,10 @@ def process_user_data(raw_data):
 
 Each service is designed to be **independent** yet **composable**, allowing you to use them individually or together as part of a complete data contract management system.
 
+## 📖 Documentation
+
+- **[Data Journey Guide](DATA_JOURNEY.md)** - Complete guide to the data production journey, including both combined and separated workflows
+
 ## 📚 Usage Examples
 
 ### Basic Usage
@@ -596,6 +600,73 @@ Support for both standard and custom field validators:
 - **Custom Validators**: Extensible validation rules via `validations` field
 - **Validation Order**: Coercion → Standard Validation → Pydantic Validation → Custom Validations
 - **Factory Pattern**: Validators are factory functions that return validation functions
+
+## 🚀 Development Setup
+
+### Quick Setup
+
+```bash
+# Run setup script
+./setup.sh
+
+# Activate environment
+source venv/bin/activate
+
+# Run tests
+pytest
+```
+
+### Using Make
+
+```bash
+make install-dev    # Install package and dev dependencies
+make test          # Run tests
+make format        # Format code with black and isort
+make lint          # Run type checking with mypy
+make check         # Run all checks (format, lint, test)
+```
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=pycharter --cov-report=html
+
+# Run specific test file
+pytest tests/test_converter.py
+
+# Run tests matching a pattern
+pytest -k "coercion"
+```
+
+## 📦 Publishing to PyPI
+
+```bash
+# Update version in pyproject.toml
+# Clean previous builds
+make clean
+
+# Build package
+make build
+
+# Test on TestPyPI
+make publish-test
+
+# Publish to PyPI
+make publish
+```
+
+## 📋 JSON Schema Compliance
+
+PyCharter is fully compliant with **JSON Schema Draft 2020-12** standard:
+
+- All schemas are validated against the standard before processing
+- Full support for all standard keywords (minLength, maxLength, pattern, enum, minimum, maximum, etc.)
+- Optional extensions (`coercion` and `validations`) work alongside standard keywords
+- Strict mode available to enforce standard-only schemas
 
 ## 🔗 Requirements
 

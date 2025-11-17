@@ -143,4 +143,74 @@ class InMemoryMetadataStore(MetadataStoreClient):
         if key in self._metadata:
             return self._metadata[key]["metadata"]
         return None
+    
+    def store_coercion_rules(
+        self,
+        schema_id: str,
+        coercion_rules: Dict[str, Any],
+        version: Optional[str] = None,
+    ) -> str:
+        """Store coercion rules for a schema."""
+        key = f"coercion:{schema_id}"
+        if version:
+            key = f"{key}:{version}"
+        self._metadata[key] = {
+            "schema_id": schema_id,
+            "version": version,
+            "type": "coercion_rules",
+            "rules": coercion_rules,
+        }
+        return key
+    
+    def get_coercion_rules(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve coercion rules for a schema."""
+        # Try versioned first
+        if version:
+            key = f"coercion:{schema_id}:{version}"
+            if key in self._metadata and self._metadata[key].get("type") == "coercion_rules":
+                return self._metadata[key]["rules"]
+        
+        # Try latest (no version)
+        key = f"coercion:{schema_id}"
+        if key in self._metadata and self._metadata[key].get("type") == "coercion_rules":
+            return self._metadata[key]["rules"]
+        
+        return None
+    
+    def store_validation_rules(
+        self,
+        schema_id: str,
+        validation_rules: Dict[str, Any],
+        version: Optional[str] = None,
+    ) -> str:
+        """Store validation rules for a schema."""
+        key = f"validation:{schema_id}"
+        if version:
+            key = f"{key}:{version}"
+        self._metadata[key] = {
+            "schema_id": schema_id,
+            "version": version,
+            "type": "validation_rules",
+            "rules": validation_rules,
+        }
+        return key
+    
+    def get_validation_rules(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve validation rules for a schema."""
+        # Try versioned first
+        if version:
+            key = f"validation:{schema_id}:{version}"
+            if key in self._metadata and self._metadata[key].get("type") == "validation_rules":
+                return self._metadata[key]["rules"]
+        
+        # Try latest (no version)
+        key = f"validation:{schema_id}"
+        if key in self._metadata and self._metadata[key].get("type") == "validation_rules":
+            return self._metadata[key]["rules"]
+        
+        return None
 
