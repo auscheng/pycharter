@@ -151,9 +151,18 @@ def example_in_etl_pipeline():
     print("Example 5d: Using Validator in ETL Pipeline")
     print("=" * 70)
     
-    # Load schema from file
-    schema_path = DATA_DIR / "schemas" / "user_schema.json"
-    User = from_file(str(schema_path), "User")
+    # Define schema inline (or load from file)
+    schema = {
+        "type": "object",
+        "properties": {
+            "username": {"type": "string", "minLength": 3},
+            "email": {"type": "string", "format": "email"},
+            "age": {"type": "integer", "minimum": 0},
+        },
+        "required": ["username", "email", "age"],
+    }
+    
+    User = from_dict(schema, "User")
     
     # Simulate data from source (e.g., CSV, API, database)
     raw_users = [
@@ -175,7 +184,7 @@ def example_in_etl_pipeline():
             print(f"  ✓ Record {i+1}: Valid - {result.data.username}")
         else:
             errors.append({"record": i+1, "data": raw_user, "errors": result.errors})
-            print(f"  ✗ Record {i+1}: Invalid - {result.errors}")
+            print(f"  ✗ Record {i+1}: Invalid - {result.errors[:1]}")
     
     print(f"\n✓ ETL Summary:")
     print(f"  Processed: {len(raw_users)} records")
@@ -193,8 +202,12 @@ def example_with_stored_schema():
     print("Example 5e: Validating with Schema from Metadata Store")
     print("=" * 70)
     
-    # Simulate getting schema from metadata store
-    # (In production, you'd use MetadataStoreClient.get_schema())
+    from pycharter import InMemoryMetadataStore, validate_with_store
+    
+    # Create store and store schema
+    store = InMemoryMetadataStore()
+    store.connect()
+    
     schema = {
         "type": "object",
         "properties": {
@@ -205,23 +218,117 @@ def example_with_stored_schema():
         "required": ["customer_id", "name", "email"],
     }
     
-    # Generate model from stored schema
-    Customer = from_dict(schema, "Customer")
+    schema_id = store.store_schema("customer", schema, version="1.0.0")
     
-    # Validate incoming data (e.g., from API request)
+    # Validate using store (retrieves schema automatically)
     api_data = {
         "customer_id": "cust-123",
         "name": "Alice Smith",
         "email": "alice@example.com",
     }
     
-    result = validate(Customer, api_data)
+    result = validate_with_store(store, schema_id, api_data)
     
     if result.is_valid:
-        print(f"\n✓ API data validated successfully")
+        print(f"\n✓ API data validated successfully using store")
         print(f"  Customer: {result.data.name} ({result.data.email})")
     else:
         print(f"\n✗ API data validation failed: {result.errors}")
+    
+    store.disconnect()
+
+
+def example_contract_based_validation():
+    """Example validating directly from contract files (no database)."""
+    print("\n" + "=" * 70)
+    print("Example 5f: Contract-Based Validation (No Database)")
+    print("=" * 70)
+    
+    from pycharter import (
+        validate_with_contract,
+        validate_batch_with_contract,
+        get_model_from_contract,
+    )
+    
+    contract_path = DATA_DIR / "examples" / "book_contract.yaml"
+    
+    if not contract_path.exists():
+        print(f"\n⚠ Contract file not found: {contract_path}")
+        print("  Skipping contract-based validation example")
+        return
+    
+    # Method 1: Validate directly from file (simplest)
+    print("\n✓ Method 1: Validate directly from file")
+    result = validate_with_contract(
+        str(contract_path),
+        {
+            "isbn": "9780123456789",
+            "title": "Python Guide",
+            "author": {"name": "John Doe"},
+            "price": 39.99,
+            "pages": 500,
+            "published_date": "2024-01-15T10:00:00Z",
+        },
+    )
+    
+    if result.is_valid:
+        print(f"  ✓ Validation successful")
+        print(f"    Title: {result.data.title}")
+        print(f"    Author: {result.data.author.name}")
+    else:
+        print(f"  ✗ Validation failed: {result.errors[:1]}")
+    
+    # Method 2: Get model once, validate multiple times (efficient)
+    print("\n✓ Method 2: Get model once, validate multiple times")
+    BookModel = get_model_from_contract(str(contract_path), "Book")
+    
+    data1 = {
+        "isbn": "1111111111111",
+        "title": "Book 1",
+        "author": {"name": "Author 1"},
+        "price": 10.0,
+        "pages": 100,
+        "published_date": "2024-01-01T00:00:00Z",
+    }
+    data2 = {
+        "isbn": "2222222222222",
+        "title": "Book 2",
+        "author": {"name": "Author 2"},
+        "price": 20.0,
+        "pages": 200,
+        "published_date": "2024-01-02T00:00:00Z",
+    }
+    
+    result1 = validate(BookModel, data1)
+    result2 = validate(BookModel, data2)
+    print(f"  ✓ Validated 2 records: {result1.is_valid}, {result2.is_valid}")
+    
+    # Method 3: Batch validation
+    print("\n✓ Method 3: Batch validation from contract")
+    results = validate_batch_with_contract(str(contract_path), [data1, data2])
+    valid_count = sum(1 for r in results if r.is_valid)
+    print(f"  ✓ Batch validation: {valid_count}/{len(results)} valid")
+    
+    # Method 4: From dictionary
+    print("\n✓ Method 4: Validate from dictionary")
+    contract_dict = {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "minLength": 1},
+                "age": {"type": "integer", "minimum": 0},
+            },
+            "required": ["name", "age"],
+        },
+        "coercion_rules": {
+            "rules": {"age": "coerce_to_integer"},
+        },
+    }
+    
+    result = validate_with_contract(contract_dict, {"name": "Alice", "age": "30"})
+    if result.is_valid:
+        print(f"  ✓ Validation successful")
+        print(f"    Name: {result.data.name}, Age: {result.data.age} (type: {type(result.data.age).__name__})")
 
 
 if __name__ == "__main__":
@@ -235,6 +342,7 @@ if __name__ == "__main__":
     example_strict_mode()
     example_in_etl_pipeline()
     example_with_stored_schema()
+    example_contract_based_validation()
     
     print("\n" + "=" * 70)
     print("✓ All Runtime Validator examples completed!")

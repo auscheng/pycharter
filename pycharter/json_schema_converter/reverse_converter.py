@@ -15,6 +15,7 @@ def to_dict(
     model: Type[BaseModel],
     title: Optional[str] = None,
     description: Optional[str] = None,
+    version: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Convert a Pydantic model to a JSON Schema dictionary.
@@ -23,26 +24,31 @@ def to_dict(
         model: The Pydantic model class to convert
         title: Optional title for the schema
         description: Optional description for the schema
+        version: Optional version string (if not provided, extracted from model)
         
     Returns:
-        JSON Schema as a dictionary
+        JSON Schema as a dictionary with version included if available
         
     Example:
         >>> from pydantic import BaseModel, Field
         >>> class Person(BaseModel):
+        ...     __version__ = "1.0.0"
         ...     name: str = Field(..., min_length=3)
         ...     age: int = Field(ge=0)
         >>> schema = to_dict(Person)
+        >>> schema["version"]
+        "1.0.0"
         >>> schema["properties"]["name"]["minLength"]
         3
     """
-    return model_to_schema(model, title=title, description=description)
+    return model_to_schema(model, title=title, description=description, version=version)
 
 
 def to_json(
     model: Type[BaseModel],
     title: Optional[str] = None,
     description: Optional[str] = None,
+    version: Optional[str] = None,
     indent: int = 2,
 ) -> str:
     """
@@ -52,6 +58,7 @@ def to_json(
         model: The Pydantic model class to convert
         title: Optional title for the schema
         description: Optional description for the schema
+        version: Optional version string (if not provided, extracted from model)
         indent: JSON indentation level
         
     Returns:
@@ -60,11 +67,12 @@ def to_json(
     Example:
         >>> from pydantic import BaseModel
         >>> class User(BaseModel):
+        ...     __version__ = "1.0.0"
         ...     name: str
         >>> schema_json = to_json(User)
         >>> print(schema_json)
     """
-    schema = model_to_schema(model, title=title, description=description)
+    schema = model_to_schema(model, title=title, description=description, version=version)
     return json.dumps(schema, indent=indent)
 
 
@@ -73,6 +81,7 @@ def to_file(
     file_path: str,
     title: Optional[str] = None,
     description: Optional[str] = None,
+    version: Optional[str] = None,
     indent: int = 2,
 ) -> None:
     """
@@ -83,16 +92,18 @@ def to_file(
         file_path: Path to the output JSON file
         title: Optional title for the schema
         description: Optional description for the schema
+        version: Optional version string (if not provided, extracted from model)
         indent: JSON indentation level
         
     Example:
         >>> from pydantic import BaseModel
         >>> class Product(BaseModel):
+        ...     __version__ = "1.0.0"
         ...     name: str
         ...     price: float
         >>> to_file(Product, "product_schema.json")
     """
-    schema = model_to_schema(model, title=title, description=description)
+    schema = model_to_schema(model, title=title, description=description, version=version)
     path = Path(file_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     

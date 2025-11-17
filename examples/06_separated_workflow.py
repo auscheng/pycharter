@@ -63,20 +63,26 @@ def separated_workflow_example():
     print("Step 2: Developer Writes Pydantic Model and Converts to JSON Schema")
     print("-" * 70)
     
-    # Developer writes Pydantic model
+    # Developer writes Pydantic model with version
+    from typing import ClassVar
+    
     class User(BaseModel):
         """User model defined by developer."""
+        # Schema version - required for versioning support
+        __version__: ClassVar[str] = "1.0.0"
+        
         user_id: str = Field(..., description="Unique identifier for the user")
         username: str = Field(..., min_length=3, max_length=20, description="Username")
         email: str = Field(..., description="User's email address")
         age: int = Field(..., ge=0, le=150, description="User's age in years")
         created_at: str = Field(..., description="Account creation timestamp")
     
-    # Convert to JSON Schema
+    # Convert to JSON Schema (version is automatically extracted from model)
     schema = to_dict(User)
     
     print("✓ Developer created Pydantic model and converted to JSON Schema")
     print(f"  Model: {User.__name__}")
+    print(f"  Schema version: {schema.get('version', 'N/A')}")
     print(f"  Properties: {list(schema.get('properties', {}).keys())}")
     print(f"  Required: {schema.get('required', [])}")
     
@@ -88,28 +94,38 @@ def separated_workflow_example():
     print("-" * 70)
     
     # Coercion rules (developer + business collaboration)
-    coercion_rules = {
-        "user_id": "coerce_to_string",  # Ensure user_id is always a string
-        "age": "coerce_to_integer",     # Convert string numbers to integers
+    coercion_rules_data = {
+        "version": "1.0.0",  # Version for coercion rules
+        "description": "Coercion rules for User data contract",
+        "rules": {
+            "user_id": "coerce_to_string",  # Ensure user_id is always a string
+            "age": "coerce_to_integer",     # Convert string numbers to integers
+        }
     }
     
     # Validation rules (developer + business collaboration)
-    validation_rules = {
-        "username": {
-            "no_capital_characters": None,  # Business requirement: usernames must be lowercase
-            "min_length": {"threshold": 3},  # Developer: technical constraint
-        },
-        "email": {
-            "non_empty_string": None,  # Business requirement: email cannot be empty
-        },
-        "age": {
-            "is_positive": {"threshold": 0},  # Business requirement: age must be positive
-        },
+    validation_rules_data = {
+        "version": "1.0.0",  # Version for validation rules
+        "description": "Validation rules for User data contract",
+        "rules": {
+            "username": {
+                "no_capital_characters": None,  # Business requirement: usernames must be lowercase
+                "min_length": {"threshold": 3},  # Developer: technical constraint
+            },
+            "email": {
+                "non_empty_string": None,  # Business requirement: email cannot be empty
+            },
+            "age": {
+                "is_positive": {"threshold": 0},  # Business requirement: age must be positive
+            },
+        }
     }
     
     print("✓ Coercion and validation rules defined:")
-    print(f"  Coercion rules: {list(coercion_rules.keys())}")
-    print(f"  Validation rules: {list(validation_rules.keys())}")
+    print(f"  Coercion rules version: {coercion_rules_data['version']}")
+    print(f"  Validation rules version: {validation_rules_data['version']}")
+    print(f"  Coercion rules: {list(coercion_rules_data['rules'].keys())}")
+    print(f"  Validation rules: {list(validation_rules_data['rules'].keys())}")
     
     # ========================================================================
     # Step 4: Store All Components Separately in Database
@@ -150,18 +166,25 @@ def separated_workflow_example():
         # Store coercion rules (from developer + business)
         store.store_coercion_rules(
             schema_id=schema_id,
-            coercion_rules=coercion_rules,
-            version=business_metadata["version"],
+            coercion_rules=coercion_rules_data["rules"],
+            version=coercion_rules_data["version"],  # Use version from coercion rules
         )
-        print(f"  ✓ Stored coercion rules")
+        print(f"  ✓ Stored coercion rules (version: {coercion_rules_data['version']})")
         
         # Store validation rules (from developer + business)
         store.store_validation_rules(
             schema_id=schema_id,
-            validation_rules=validation_rules,
-            version=business_metadata["version"],
+            validation_rules=validation_rules_data["rules"],
+            version=validation_rules_data["version"],  # Use version from validation rules
         )
-        print(f"  ✓ Stored validation rules")
+        print(f"  ✓ Stored validation rules (version: {validation_rules_data['version']})")
+        
+        # Display all component versions
+        print(f"\n  Component Versions:")
+        print(f"    Schema: {schema.get('version', 'N/A')}")
+        print(f"    Metadata: {business_metadata.get('version', 'N/A')}")
+        print(f"    Coercion Rules: {coercion_rules_data['version']}")
+        print(f"    Validation Rules: {validation_rules_data['version']}")
         
         # ========================================================================
         # Step 5: Runtime Validation - Retrieve All Components and Validate

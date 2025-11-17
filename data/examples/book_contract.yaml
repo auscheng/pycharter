@@ -2,6 +2,7 @@ schema:
   type: object
   title: Book
   description: Book model with nested author and metadata.
+  version: 1.0.0
   properties:
     isbn:
       description: International Standard Book Number
@@ -138,3 +139,8 @@ business_rules:
     track_stock: true
     low_stock_threshold: 10
     description: Track inventory and alert when stock is low
+versions:
+  schema: 1.0.0
+  coercion_rules: 1.0.0
+  validation_rules: 1.0.0
+  metadata: 1.0.0

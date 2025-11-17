@@ -2,6 +2,7 @@
   "type": "object",
   "title": "Book",
   "description": "Book model with nested author and metadata.",
+  "version": "1.0.0",
   "properties": {
     "isbn": {
       "description": "International Standard Book Number",

@@ -84,6 +84,34 @@ metadata = parse_contract_file(str(contract_path))
 print(metadata.schema)  # JSON Schema
 print(metadata.ownership)  # Ownership info
 print(metadata.governance_rules)  # Governance rules
+print(metadata.versions)  # Component versions
+```
+
+### Validate Directly from Contract (No Database)
+
+```python
+from pycharter import validate_with_contract, get_model_from_contract
+
+# Simplest: validate directly from file
+result = validate_with_contract(
+    "data/examples/book_contract.yaml",
+    {
+        "isbn": "9780123456789",
+        "title": "Python Guide",
+        "author": {"name": "John Doe"},
+        "price": 39.99,
+        "pages": 500,
+        "published_date": "2024-01-15T10:00:00Z"
+    }
+)
+
+if result.is_valid:
+    print(f"Valid book: {result.data.title}")
+
+# Efficient: get model once, validate multiple times
+BookModel = get_model_from_contract("data/examples/book_contract.yaml")
+result1 = validate(BookModel, data1)
+result2 = validate(BookModel, data2)
 ```
 
 ### Generate Schema from Pydantic Model

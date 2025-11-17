@@ -227,35 +227,56 @@ ProductModel = from_dict(schema, "Product")  # Round-trip
 - Supports single record and batch validation
 - Can be used in strict mode (raises exceptions) or lenient mode (returns results)
 
-**Example**:
+**Two Validation Modes**:
+
+1. **Database-Backed Validation** (with metadata store):
+   - Retrieve schemas and rules from database
+   - Use `validate_with_store()`, `validate_batch_with_store()`, `get_model_from_store()`
+
+2. **Contract-Based Validation** (no database required):
+   - Validate directly against contract files or dictionaries
+   - Use `validate_with_contract()`, `validate_batch_with_contract()`, `get_model_from_contract()`
+
+**Example - Database-Backed**:
 ```python
-from pycharter import validate, validate_batch, from_dict, MetadataStoreClient
+from pycharter import validate_with_store, InMemoryMetadataStore
 
-# Get model (from store or contract)
-client = MetadataStoreClient(...)
-schema = client.get_schema("user_schema_v1")
-UserModel = from_dict(schema, "User")
+# Store and validate with database
+store = InMemoryMetadataStore()
+store.connect()
+# ... store schema, rules, etc. ...
 
-# Validate single record
-result = validate(UserModel, {"name": "Alice", "age": 30})
+# Validate using store
+result = validate_with_store(store, "user_schema_v1", {"name": "Alice", "age": 30})
 if result.is_valid:
     print(f"Valid user: {result.data.name}")
-else:
-    print(f"Validation errors: {result.errors}")
-
-# Validate batch (e.g., in ETL pipeline)
-users = [
-    {"name": "Alice", "age": 30},
-    {"name": "Bob", "age": 25},
-    {"name": "Charlie", "age": "invalid"}  # Will fail validation
-]
-
-results = validate_batch(UserModel, users)
-valid_users = [r.data for r in results if r.is_valid]
-invalid_count = sum(1 for r in results if not r.is_valid)
 ```
 
-**Contribution to Journey**: The runtime validator is the **enforcement layer** that ensures data quality in production. It validates actual data against contract specifications, catching violations early and preventing bad data from propagating through your systems.
+**Example - Contract-Based (No Database)**:
+```python
+from pycharter import validate_with_contract, get_model_from_contract, validate
+
+# Validate directly from contract file (simplest)
+result = validate_with_contract(
+    "data/examples/book_contract.yaml",
+    {"isbn": "1234567890", "title": "Book", ...}
+)
+
+# Or get model once, validate multiple times (efficient)
+BookModel = get_model_from_contract("book_contract.yaml")
+result1 = validate(BookModel, data1)
+result2 = validate(BookModel, data2)
+
+# Or from dictionary
+contract = {
+    "schema": {"type": "object", "properties": {...}},
+    "coercion_rules": {"rules": {...}},
+    "validation_rules": {"rules": {...}}
+}
+result = validate_with_contract(contract, data)
+```
+
+**Contribution to Journey**: The runtime validator is the **enforcement layer** that ensures data quality in production. It validates actual data against contract specifications, catching violations early and preventing bad data from propagating through your systems. It supports both database-backed workflows (for production systems with metadata stores) and contract-based workflows (for simpler use cases without database dependencies).
 
 ---
 

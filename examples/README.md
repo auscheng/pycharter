@@ -50,7 +50,12 @@ Each example focuses on a specific service:
 - Validate batch data
 - Strict vs lenient mode
 - Use in ETL pipelines
-- Validate with stored schemas
+- Validate with stored schemas (database-backed)
+- Validate directly from contract files (no database required)
+
+**Two Validation Modes**:
+- **Database-Backed**: Use `validate_with_store()` to retrieve schemas/rules from metadata store
+- **Contract-Based**: Use `validate_with_contract()` to validate directly from contract files/dicts
 
 **Run**: `python examples/05_runtime_validator.py`
 

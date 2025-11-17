@@ -6,7 +6,7 @@ It will be converted to JSON Schema format.
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import ClassVar, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,6 +21,9 @@ class Author(BaseModel):
 
 class Book(BaseModel):
     """Book model with nested author and metadata."""
+    
+    # Schema version - required for versioning support
+    __version__: ClassVar[str] = "1.0.0"
 
     isbn: str = Field(..., description="International Standard Book Number")
     title: str = Field(..., min_length=1, max_length=200, description="Book title")

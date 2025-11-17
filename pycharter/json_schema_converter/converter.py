@@ -339,10 +339,78 @@ def _process_field_type(
     return schema
 
 
+def _extract_version_from_model(model: Type[BaseModel]) -> Optional[str]:
+    """
+    Extract version from a Pydantic model.
+    
+    Checks multiple sources in order:
+    1. __version__ class variable (ClassVar or regular attribute)
+    2. schema_version class variable (ClassVar or regular attribute)
+    3. model_config.json_schema_extra["version"]
+    4. model_config.json_schema_extra.get("version")
+    
+    Args:
+        model: Pydantic model class
+        
+    Returns:
+        Version string if found, None otherwise
+    """
+    # Check class variables (including ClassVar)
+    if hasattr(model, '__version__'):
+        version = getattr(model, '__version__')
+        # Handle ClassVar - it's stored in __annotations__
+        if isinstance(version, str):
+            return version
+        # If it's a ClassVar descriptor, try to get the actual value
+        if hasattr(version, '__get__'):
+            try:
+                actual_version = version.__get__(None, model)
+                if isinstance(actual_version, str):
+                    return actual_version
+            except (AttributeError, TypeError):
+                pass
+    
+    if hasattr(model, 'schema_version'):
+        version = getattr(model, 'schema_version')
+        if isinstance(version, str):
+            return version
+        # Handle ClassVar
+        if hasattr(version, '__get__'):
+            try:
+                actual_version = version.__get__(None, model)
+                if isinstance(actual_version, str):
+                    return actual_version
+            except (AttributeError, TypeError):
+                pass
+    
+    # Check model_config (Pydantic v2)
+    if hasattr(model, 'model_config'):
+        config = model.model_config
+        if hasattr(config, 'json_schema_extra'):
+            json_schema_extra = config.json_schema_extra
+            if isinstance(json_schema_extra, dict) and "version" in json_schema_extra:
+                version = json_schema_extra["version"]
+                if isinstance(version, str):
+                    return version
+        # Also check if it's a callable that returns a dict
+        elif callable(getattr(config, 'json_schema_extra', None)):
+            try:
+                extra = config.json_schema_extra({})
+                if isinstance(extra, dict) and "version" in extra:
+                    version = extra["version"]
+                    if isinstance(version, str):
+                        return version
+            except Exception:
+                pass
+    
+    return None
+
+
 def model_to_schema(
     model: Type[BaseModel],
     title: Optional[str] = None,
     description: Optional[str] = None,
+    version: Optional[str] = None,
     processed_models: Optional[Set[str]] = None
 ) -> Dict[str, Any]:
     """
@@ -354,22 +422,27 @@ def model_to_schema(
     - Nested models
     - Default values
     - Required fields
+    - Version information
     
     Args:
         model: Pydantic model class to convert
         title: Optional title for the schema
         description: Optional description for the schema
+        version: Optional version string (if not provided, extracted from model)
         processed_models: Set of already processed model names (to avoid cycles)
         
     Returns:
-        JSON Schema dictionary
+        JSON Schema dictionary with version included if available
         
     Example:
         >>> from pydantic import BaseModel, Field
         >>> class Person(BaseModel):
+        ...     __version__ = "1.0.0"
         ...     name: str = Field(..., min_length=3)
         ...     age: int = Field(ge=0, le=120)
         >>> schema = model_to_schema(Person)
+        >>> schema["version"]
+        "1.0.0"
         >>> schema["properties"]["name"]["minLength"]
         3
     """
@@ -396,6 +469,13 @@ def model_to_schema(
         schema["description"] = description
     elif model.__doc__:
         schema["description"] = model.__doc__.strip()
+    
+    # Extract version from model if not provided
+    if version is None:
+        version = _extract_version_from_model(model)
+    
+    if version:
+        schema["version"] = version
     
     # Extract validators
     validators = _extract_validators_from_model(model)
