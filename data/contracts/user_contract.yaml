@@ -38,8 +38,9 @@ governance_rules:
     days: 365
     description: User data should be retained for 365 days
   pii_fields:
-    - email
-    - user_id
+    fields:
+      - email
+      - user_id
     description: Fields containing personally identifiable information
   access_control:
     level: restricted
