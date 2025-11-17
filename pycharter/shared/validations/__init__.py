@@ -9,8 +9,14 @@ from pydantic import ValidationInfo
 
 from pycharter.shared.validations.builtin import (
     greater_than_or_equal_to,
+    is_alphanumeric,
+    is_email,
+    is_numeric_string,
     is_positive,
+    is_unique,
+    is_url,
     less_than_or_equal_to,
+    matches_regex,
     max_length,
     min_length,
     no_capital_characters,
@@ -32,6 +38,12 @@ VALIDATION_REGISTRY: Dict[str, Callable] = {
     "no_special_characters": no_special_characters,
     "is_positive": is_positive,
     "non_empty_string": non_empty_string,
+    "matches_regex": matches_regex,
+    "is_email": is_email,
+    "is_url": is_url,
+    "is_alphanumeric": is_alphanumeric,
+    "is_numeric_string": is_numeric_string,
+    "is_unique": is_unique,
 }
 
 

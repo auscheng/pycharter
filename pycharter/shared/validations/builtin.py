@@ -241,3 +241,174 @@ def no_special_characters():
         return value
     return _no_special_characters
 
+
+def matches_regex(pattern: str):
+    """
+    Factory function to create a matches_regex validator.
+    
+    Args:
+        pattern: Regular expression pattern to match
+        
+    Returns:
+        Validation function
+    """
+    def _matches_regex(value: Any, info: ValidationInfo) -> Any:
+        """
+        Validate that string matches the given regex pattern.
+        
+        Returns:
+            Validated value
+            
+        Raises:
+            ValidationError: If string doesn't match pattern
+        """
+        if value is None:
+            return value
+        if isinstance(value, str):
+            if not re.match(pattern, value):
+                raise ValueError(
+                    f"String must match pattern '{pattern}', got '{value}'"
+                )
+        return value
+    return _matches_regex
+
+
+def is_email():
+    """
+    Factory function to create an is_email validator.
+    
+    Returns:
+        Validation function
+    """
+    def _is_email(value: Any, info: ValidationInfo) -> Any:
+        """
+        Validate that string is a valid email address.
+        
+        Returns:
+            Validated value
+            
+        Raises:
+            ValidationError: If string is not a valid email
+        """
+        if value is None:
+            return value
+        if isinstance(value, str):
+            # Basic email regex (RFC 5322 simplified)
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, value):
+                raise ValueError(f"String must be a valid email address, got '{value}'")
+        return value
+    return _is_email
+
+
+def is_url():
+    """
+    Factory function to create an is_url validator.
+    
+    Returns:
+        Validation function
+    """
+    def _is_url(value: Any, info: ValidationInfo) -> Any:
+        """
+        Validate that string is a valid URL.
+        
+        Returns:
+            Validated value
+            
+        Raises:
+            ValidationError: If string is not a valid URL
+        """
+        if value is None:
+            return value
+        if isinstance(value, str):
+            # Basic URL pattern
+            url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+            if not re.match(url_pattern, value):
+                raise ValueError(f"String must be a valid URL, got '{value}'")
+        return value
+    return _is_url
+
+
+def is_alphanumeric():
+    """
+    Factory function to create an is_alphanumeric validator.
+    
+    Returns:
+        Validation function
+    """
+    def _is_alphanumeric(value: Any, info: ValidationInfo) -> Any:
+        """
+        Validate that string contains only alphanumeric characters (no spaces or special chars).
+        
+        Returns:
+            Validated value
+            
+        Raises:
+            ValidationError: If string contains non-alphanumeric characters
+        """
+        if value is None:
+            return value
+        if isinstance(value, str):
+            if not value.isalnum():
+                raise ValueError(
+                    f"String must contain only alphanumeric characters, got '{value}'"
+                )
+        return value
+    return _is_alphanumeric
+
+
+def is_numeric_string():
+    """
+    Factory function to create an is_numeric_string validator.
+    
+    Returns:
+        Validation function
+    """
+    def _is_numeric_string(value: Any, info: ValidationInfo) -> Any:
+        """
+        Validate that string contains only numeric characters (digits, optionally with decimal point).
+        
+        Returns:
+            Validated value
+            
+        Raises:
+            ValidationError: If string is not numeric
+        """
+        if value is None:
+            return value
+        if isinstance(value, str):
+            if not re.match(r'^-?\d+(\.\d+)?$', value):
+                raise ValueError(
+                    f"String must be numeric, got '{value}'"
+                )
+        return value
+    return _is_numeric_string
+
+
+def is_unique():
+    """
+    Factory function to create an is_unique validator for arrays.
+    
+    Returns:
+        Validation function
+    """
+    def _is_unique(value: Any, info: ValidationInfo) -> Any:
+        """
+        Validate that all items in a list are unique.
+        
+        Returns:
+            Validated value
+            
+        Raises:
+            ValidationError: If list contains duplicate items
+        """
+        if value is None:
+            return value
+        if isinstance(value, list):
+            if len(value) != len(set(value)):
+                raise ValueError(
+                    "List must contain only unique items"
+                )
+        return value
+    return _is_unique
+

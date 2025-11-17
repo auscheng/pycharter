@@ -491,7 +491,13 @@ All schemas are validated against JSON Schema standard before processing, ensuri
 | `coerce_to_float` | Convert int, string (numeric), bool to float |
 | `coerce_to_boolean` | Convert int, string to bool |
 | `coerce_to_datetime` | Convert string (ISO format), timestamp to datetime |
+| `coerce_to_date` | Convert string (date format), datetime to date (date only, no time) |
 | `coerce_to_uuid` | Convert string to UUID |
+| `coerce_to_lowercase` | Convert string to lowercase |
+| `coerce_to_uppercase` | Convert string to uppercase |
+| `coerce_to_stripped_string` | Strip leading and trailing whitespace from string |
+| `coerce_to_list` | Convert single value to list `[value]` (preserves None) |
+| `coerce_empty_to_null` | Convert empty strings/lists/dicts to None (useful for nullable fields) |
 
 ## ✅ Built-in Validations (Charter Extensions)
 
@@ -502,8 +508,16 @@ All schemas are validated against JSON Schema standard before processing, ensuri
 | `only_allow` | Only allow specific values | `{"allowed_values": [...]}` |
 | `greater_than_or_equal_to` | Numeric minimum | `{"threshold": N}` |
 | `less_than_or_equal_to` | Numeric maximum | `{"threshold": N}` |
+| `is_positive` | Value must be positive | `{"threshold": 0}` |
 | `no_capital_characters` | No uppercase letters | `null` |
 | `no_special_characters` | Only alphanumeric and spaces | `null` |
+| `non_empty_string` | String must not be empty | `null` |
+| `matches_regex` | String must match regex pattern | `{"pattern": "..."}` |
+| `is_email` | String must be valid email address | `null` |
+| `is_url` | String must be valid URL | `null` |
+| `is_alphanumeric` | Only alphanumeric characters (no spaces/special) | `null` |
+| `is_numeric_string` | String must be numeric (digits, optional decimal) | `null` |
+| `is_unique` | All items in array must be unique | `null` |
 
 > **Note**: Charter extensions (`coercion` and `validations`) are optional and can be used alongside standard JSON Schema keywords. All validation logic is stored as data in the JSON schema, making it fully data-driven.
 

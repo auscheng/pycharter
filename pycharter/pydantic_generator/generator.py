@@ -316,8 +316,21 @@ def schema_to_model(
         # Extract charter validations if present (extension)
         validations = field_schema.get("validations", {})
         if validations and isinstance(validations, dict):
-            validation_validators[field_name] = []
+            if field_name not in validation_validators:
+                validation_validators[field_name] = []
             for validation_name, validation_config in validations.items():
+                # Handle special cases first
+                if validation_name == "matches_regex":
+                    # Handle regex pattern validation
+                    if isinstance(validation_config, dict):
+                        pattern = validation_config.get("pattern", "")
+                    else:
+                        pattern = str(validation_config) if validation_config else ""
+                    if pattern:
+                        validation_func = create_pattern_validator(pattern)
+                        validation_validators[field_name].append(validation_func)
+                    continue
+                
                 try:
                     validation_factory = get_validation(validation_name)
                     # Handle None/null config
@@ -335,12 +348,16 @@ def schema_to_model(
                     elif validation_name == "only_allow":
                         allowed_values = validation_config.get("allowed_values", validation_config.get("value", []))
                         validation_func = validation_factory(allowed_values)
-                    elif validation_name in ["greater_than_or_equal_to", "less_than_or_equal_to"]:
+                    elif validation_name in ["greater_than_or_equal_to", "less_than_or_equal_to", "is_positive"]:
                         threshold = validation_config.get("threshold", validation_config.get("value", 0))
                         validation_func = validation_factory(threshold)
+                    elif validation_name == "matches_regex":
+                        # This should be handled above, but just in case
+                        pattern = validation_config.get("pattern", "")
+                        validation_func = validation_factory(pattern)
                     else:
-                        # For validations that don't need config (like no_capital_characters)
-                        # Call factory with no args or empty config
+                        # For validations that don't need config (like no_capital_characters, is_email, is_url)
+                        # Call factory with no args
                         validation_func = validation_factory()
                     
                     validation_validators[field_name].append(validation_func)

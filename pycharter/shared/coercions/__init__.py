@@ -6,12 +6,17 @@ These functions are applied before Pydantic validation (mode='before').
 from typing import Any, Callable, Dict
 
 from pycharter.shared.coercions.builtin import (
+    coerce_empty_to_null,
     coerce_to_boolean,
+    coerce_to_date,
     coerce_to_datetime,
     coerce_to_float,
     coerce_to_integer,
+    coerce_to_list,
     coerce_to_lowercase,
+    coerce_to_stripped_string,
     coerce_to_string,
+    coerce_to_uppercase,
     coerce_to_uuid,
 )
 
@@ -22,8 +27,13 @@ COERCION_REGISTRY: Dict[str, Callable[[Any], Any]] = {
     "coerce_to_float": coerce_to_float,
     "coerce_to_boolean": coerce_to_boolean,
     "coerce_to_datetime": coerce_to_datetime,
+    "coerce_to_date": coerce_to_date,
     "coerce_to_uuid": coerce_to_uuid,
     "coerce_to_lowercase": coerce_to_lowercase,
+    "coerce_to_uppercase": coerce_to_uppercase,
+    "coerce_to_stripped_string": coerce_to_stripped_string,
+    "coerce_to_list": coerce_to_list,
+    "coerce_empty_to_null": coerce_empty_to_null,
 }
 
 
