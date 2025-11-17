@@ -45,9 +45,32 @@ class InMemoryMetadataStore(MetadataStoreClient):
         self,
         schema_name: str,
         schema: Dict[str, Any],
-        version: Optional[str] = None,
+        version: str,
     ) -> str:
-        """Store a schema in memory."""
+        """
+        Store a schema in memory.
+        
+        Args:
+            schema_name: Name/identifier for the schema
+            schema: JSON Schema dictionary (must contain "version" field or it will be added)
+            version: Required version string (must match schema["version"] if present)
+            
+        Returns:
+            Schema ID
+            
+        Raises:
+            ValueError: If version is missing or doesn't match schema version
+        """
+        # Ensure schema has version (parent class handles validation)
+        if "version" not in schema:
+            schema = dict(schema)  # Make a copy
+            schema["version"] = version
+        elif schema.get("version") != version:
+            raise ValueError(
+                f"Version mismatch: provided version '{version}' does not match "
+                f"schema version '{schema.get('version')}'"
+            )
+        
         schema_id = f"schema_{self._next_id}"
         self._next_id += 1
         self._schemas[schema_id] = {
@@ -58,10 +81,40 @@ class InMemoryMetadataStore(MetadataStoreClient):
         }
         return schema_id
     
-    def get_schema(self, schema_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve a schema by ID."""
+    def get_schema(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve a schema by ID and optional version.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest version)
+            
+        Returns:
+            Schema dictionary with version included, or None if not found
+            
+        Raises:
+            ValueError: If schema is found but doesn't have a version field
+        """
         if schema_id in self._schemas:
-            return self._schemas[schema_id]["schema"]
+            schema = self._schemas[schema_id]["schema"]
+            stored_version = self._schemas[schema_id].get("version")
+            
+            # If version specified, check it matches
+            if version and stored_version and stored_version != version:
+                return None  # Version mismatch
+            
+            # Ensure schema has version
+            if "version" not in schema:
+                schema = dict(schema)  # Make a copy
+                schema["version"] = stored_version or "1.0.0"
+            
+            # Validate schema has version
+            if "version" not in schema:
+                raise ValueError(f"Schema {schema_id} does not have a version field")
+            
+            return schema
         return None
     
     def list_schemas(self) -> List[Dict[str, Any]]:

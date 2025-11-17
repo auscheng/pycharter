@@ -24,6 +24,7 @@ def example_validate_single_record():
     # Generate a model
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "user_id": {"type": "string", "format": "uuid"},
             "username": {"type": "string", "minLength": 3},
@@ -78,6 +79,7 @@ def example_validate_batch():
     # Generate model
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "product_id": {"type": "string"},
             "name": {"type": "string", "minLength": 1},
@@ -122,6 +124,7 @@ def example_strict_mode():
     
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "order_id": {"type": "string"},
             "total": {"type": "number", "minimum": 0},
@@ -154,6 +157,7 @@ def example_in_etl_pipeline():
     # Define schema inline (or load from file)
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "username": {"type": "string", "minLength": 3},
             "email": {"type": "string", "format": "email"},
@@ -210,6 +214,7 @@ def example_with_stored_schema():
     
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "customer_id": {"type": "string"},
             "name": {"type": "string"},
@@ -314,6 +319,7 @@ def example_contract_based_validation():
     contract_dict = {
         "schema": {
             "type": "object",
+            "version": "1.0.0",
             "properties": {
                 "name": {"type": "string", "minLength": 1},
                 "age": {"type": "integer", "minimum": 0},

@@ -17,15 +17,19 @@ def from_dict(schema: Dict[str, Any], model_name: str = "DynamicModel") -> Type[
     Convert a JSON schema dictionary to a Pydantic model.
     
     Args:
-        schema: The JSON schema as a dictionary
+        schema: The JSON schema as a dictionary (must contain "version" field)
         model_name: Name for the generated Pydantic model class
         
     Returns:
         A Pydantic model class
         
+    Raises:
+        ValueError: If schema does not have a "version" field
+        
     Example:
         >>> schema = {
         ...     "type": "object",
+        ...     "version": "1.0.0",
         ...     "properties": {
         ...         "name": {"type": "string", "description": "Person's name"},
         ...         "age": {"type": "integer", "description": "Person's age"}
@@ -40,6 +44,14 @@ def from_dict(schema: Dict[str, Any], model_name: str = "DynamicModel") -> Type[
         30
     """
     validate_schema(schema)
+    
+    # Ensure schema has version
+    if "version" not in schema:
+        raise ValueError(
+            "Schema must have a 'version' field. All schemas must be versioned. "
+            "Please add 'version': '<version_string>' to your schema."
+        )
+    
     return schema_to_model(schema, model_name)
 
 
@@ -48,16 +60,20 @@ def from_json(json_string: str, model_name: str = "DynamicModel") -> Type[BaseMo
     Convert a JSON schema string to a Pydantic model.
     
     Args:
-        json_string: The JSON schema as a string
+        json_string: The JSON schema as a string (must contain "version" field)
         model_name: Name for the generated Pydantic model class
         
     Returns:
         A Pydantic model class
         
+    Raises:
+        ValueError: If schema does not have a "version" field
+        
     Example:
         >>> schema_json = '''
         ... {
         ...     "type": "object",
+        ...     "version": "1.0.0",
         ...     "properties": {
         ...         "name": {"type": "string"}
         ...     }
@@ -74,15 +90,18 @@ def from_file(file_path: Union[str, Path], model_name: Optional[str] = None) -> 
     Load a JSON schema from a file and convert it to a Pydantic model.
     
     Args:
-        file_path: Path to the JSON schema file
+        file_path: Path to the JSON schema file (must contain "version" field)
         model_name: Name for the generated Pydantic model class.
                    If None, uses the file stem as the model name.
         
     Returns:
         A Pydantic model class
         
+    Raises:
+        ValueError: If schema does not have a "version" field
+        
     Example:
-        >>> # Assuming schema.json exists
+        >>> # Assuming schema.json exists with version field
         >>> Person = from_file("schema.json", "Person")
     """
     path = Path(file_path)
@@ -104,14 +123,17 @@ def from_url(url: str, model_name: str = "DynamicModel") -> Type[BaseModel]:
     Load a JSON schema from a URL and convert it to a Pydantic model.
     
     Args:
-        url: URL to the JSON schema
+        url: URL to the JSON schema (must contain "version" field)
         model_name: Name for the generated Pydantic model class
         
     Returns:
         A Pydantic model class
         
+    Raises:
+        ValueError: If schema does not have a "version" field
+        
     Example:
-        >>> # Load schema from a URL
+        >>> # Load schema from a URL (must have version field)
         >>> Person = from_url("https://example.com/schema.json", "Person")
     """
     try:

@@ -23,6 +23,7 @@ def example_from_dict():
     
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "name": {"type": "string", "minLength": 1},
             "age": {"type": "integer", "minimum": 0, "maximum": 150},
@@ -55,24 +56,37 @@ def example_from_file():
     print("Example 3b: Generate Model from JSON Schema File")
     print("=" * 70)
     
-    schema_path = DATA_DIR / "schemas" / "user_schema.json"
+    # Use the book schema from examples (which has version)
+    schema_path = DATA_DIR / "examples" / "book_schema.json"
+    
+    if not schema_path.exists():
+        print(f"\n⚠ Schema file not found: {schema_path}")
+        print("  Creating example schema with version...")
+        # Create a simple example schema with version
+        import json
+        example_schema = {
+            "type": "object",
+            "version": "1.0.0",
+            "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string", "format": "email"},
+            },
+            "required": ["name", "email"],
+        }
+        schema_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(schema_path, "w") as f:
+            json.dump(example_schema, f, indent=2)
     
     # Generate model from file
     User = from_file(str(schema_path), "User")
     
-    # Load sample data
-    sample_data_path = DATA_DIR / "sample_data" / "user_sample_data.json"
-    with open(sample_data_path) as f:
-        user_data = json.load(f)
-    
-    # Create instance
+    # Create instance with sample data
+    user_data = {"name": "Alice", "email": "alice@example.com"}
     user = User(**user_data)
     
     print(f"\n✓ Generated User model from: {schema_path.name}")
-    print(f"  Username: {user.username}")
+    print(f"  Name: {user.name}")
     print(f"  Email: {user.email}")
-    if hasattr(user, "age"):
-        print(f"  Age: {user.age}")
 
 
 def example_from_json_string():
@@ -84,6 +98,7 @@ def example_from_json_string():
     schema_json = """
     {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "product_id": {"type": "string"},
             "name": {"type": "string"},
@@ -115,6 +130,7 @@ def example_generate_model_file():
     
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "order_id": {"type": "string", "format": "uuid"},
             "customer_name": {"type": "string"},
@@ -143,6 +159,7 @@ def example_nested_objects():
     
     schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "user": {
                 "type": "object",

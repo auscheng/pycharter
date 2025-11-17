@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**PyCharter** is a powerful Python library that automatically converts JSON schemas into fully-functional Pydantic models. It fully supports the JSON Schema Draft 2020-12 standard, including all standard validation keywords (minLength, maxLength, pattern, enum, minimum, maximum, etc.), while also providing extensions for pre-validation coercion and post-validation checks. It handles nested objects, arrays, and custom validators, with all validation logic stored as data (not Python code).
+**PyCharter** is a powerful Python library that automatically converts JSON schemas into fully-functional Pydantic models. It fully supports the JSON Schema Draft 2020-12 standard, including all standard validation keywords (minLength, maxLength, pattern, enum, minimum, maximum, etc.), while also providing extensions for pre-validation coercion and post-validation checks. It handles nested objects, arrays, and custom validators, with all validation logic stored as data (not Python code). PyCharter also provides a complete data contract management system with versioning, metadata storage, and runtime validation capabilities.
 
 ## ✨ Features
 
@@ -53,7 +53,7 @@ print(person.age)   # Output: 30
 
 ## 🏗️ Core Services & Data Production Journey
 
-PyCharter provides **five core services** that work together to support a complete data production journey, from contract specification to runtime validation. Each service plays a critical role in managing data contracts and ensuring data quality throughout your pipeline.
+PyCharter provides **six core services** that work together to support a complete data production journey, from contract specification to runtime validation. Each service plays a critical role in managing data contracts and ensuring data quality throughout your pipeline.
 
 ### The Data Production Journey
 
@@ -81,6 +81,7 @@ The typical data production workflow follows this path:
 - Accepts data contract files containing schema definitions, governance rules, ownership information, and metadata
 - Decomposes the contract into distinct components: `schema`, `governance_rules`, `ownership`, and `metadata`
 - Returns a `ContractMetadata` object that separates concerns and makes each component accessible
+- Extracts and tracks versions of all components
 
 **Example**:
 ```python
@@ -94,9 +95,54 @@ schema = metadata.schema              # JSON Schema definition
 governance = metadata.governance_rules # Governance policies
 ownership = metadata.ownership         # Owner/team information
 metadata_info = metadata.metadata      # Additional metadata
+versions = metadata.versions          # Component versions
 ```
 
 **Contribution to Journey**: The contract parser is the **entry point** that takes raw contract specifications and prepares them for downstream processing. It ensures that contracts are properly structured and that all components (schema, governance, ownership) are separated for independent handling.
+
+---
+
+### 1b. 🏗️ Contract Builder (`pycharter.contract_builder`)
+
+**Purpose**: Constructs consolidated data contracts from separate artifacts (schema, coercion rules, validation rules, metadata).
+
+**When to Use**: When you have separate artifacts stored independently and need to combine them into a single consolidated contract for runtime validation or distribution.
+
+**How It Works**:
+- Takes separate artifacts (schema, coercion rules, validation rules, metadata, ownership, governance rules)
+- Merges coercion and validation rules into the schema
+- Tracks versions of all components
+- Produces a consolidated contract suitable for runtime validation
+- Can build from artifacts directly or retrieve from metadata store
+
+**Example**:
+```python
+from pycharter import build_contract, build_contract_from_store, ContractArtifacts
+
+# Build from separate artifacts
+artifacts = ContractArtifacts(
+    schema={"type": "object", "version": "1.0.0", "properties": {...}},
+    coercion_rules={"version": "1.0.0", "rules": {"age": "coerce_to_integer"}},
+    validation_rules={"version": "1.0.0", "rules": {"age": {"is_positive": {...}}}},
+    metadata={"version": "1.0.0", "description": "User contract"},
+    ownership={"owner": "data-team", "team": "engineering"},
+)
+
+contract = build_contract(artifacts)
+# Contract now has:
+# - schema with rules merged
+# - metadata, ownership, governance_rules
+# - versions tracking all components
+
+# Or build from metadata store
+contract = build_contract_from_store(store, "user_schema_v1")
+
+# Use for validation
+from pycharter import validate_with_contract
+result = validate_with_contract(contract, {"name": "Alice", "age": "30"})
+```
+
+**Contribution to Journey**: The contract builder is the **consolidation layer** that combines separate artifacts (stored independently in the database) into a single contract artifact. This consolidated contract tracks all component versions and can be used for runtime validation, distribution, or archival purposes.
 
 ---
 
@@ -282,7 +328,7 @@ result = validate_with_contract(contract, data)
 
 ### Complete Workflow Example
 
-Here's how all five services work together in a complete data production journey:
+Here's how all six services work together in a complete data production journey:
 
 ```python
 from pycharter import (
@@ -331,6 +377,7 @@ def process_user_data(raw_data):
 | Service | Input | Output | Journey Stage |
 |---------|-------|--------|---------------|
 | **Contract Parser** | Contract files (YAML/JSON) | `ContractMetadata` | Contract Specification → Parsing |
+| **Contract Builder** | Separate artifacts or Store | Consolidated contract | Storage → Consolidation |
 | **Metadata Store** | `ContractMetadata` | Stored metadata (DB) | Parsing → Storage |
 | **Pydantic Generator** | JSON Schema | Pydantic models | Storage → Model Generation |
 | **JSON Schema Converter** | Pydantic models | JSON Schema | (Bidirectional) |

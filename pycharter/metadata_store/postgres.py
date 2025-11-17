@@ -127,11 +127,34 @@ class PostgresMetadataStore(MetadataStoreClient):
         self,
         schema_name: str,
         schema: Dict[str, Any],
-        version: Optional[str] = None,
+        version: str,
     ) -> str:
-        """Store a schema in PostgreSQL."""
+        """
+        Store a schema in PostgreSQL.
+        
+        Args:
+            schema_name: Name/identifier for the schema
+            schema: JSON Schema dictionary (must contain "version" field or it will be added)
+            version: Required version string (must match schema["version"] if present)
+            
+        Returns:
+            Schema ID
+            
+        Raises:
+            ValueError: If version is missing or doesn't match schema version
+        """
         if not self._connection:
             raise RuntimeError("Not connected. Call connect() first.")
+        
+        # Ensure schema has version
+        if "version" not in schema:
+            schema = dict(schema)  # Make a copy
+            schema["version"] = version
+        elif schema.get("version") != version:
+            raise ValueError(
+                f"Version mismatch: provided version '{version}' does not match "
+                f"schema version '{schema.get('version')}'"
+            )
         
         with self._connection.cursor() as cur:
             cur.execute("""
@@ -146,19 +169,54 @@ class PostgresMetadataStore(MetadataStoreClient):
             self._connection.commit()
             return str(schema_id)
     
-    def get_schema(self, schema_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve a schema by ID."""
+    def get_schema(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve a schema by ID and optional version.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest version)
+            
+        Returns:
+            Schema dictionary with version included, or None if not found
+            
+        Raises:
+            ValueError: If schema is found but doesn't have a version field
+        """
         if not self._connection:
             raise RuntimeError("Not connected. Call connect() first.")
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT schema_data FROM schemas WHERE id = %s", (schema_id,))
+            if version:
+                cur.execute(
+                    "SELECT schema_data, version FROM schemas WHERE id = %s AND version = %s",
+                    (schema_id, version),
+                )
+            else:
+                cur.execute(
+                    "SELECT schema_data, version FROM schemas WHERE id = %s ORDER BY version DESC LIMIT 1",
+                    (schema_id,),
+                )
             row = cur.fetchone()
             if row:
                 # JSONB is already parsed as dict by psycopg2
                 schema_data = row["schema_data"]
+                stored_version = row.get("version")
+                
                 if isinstance(schema_data, str):
-                    return json.loads(schema_data)
+                    schema_data = json.loads(schema_data)
+                
+                # Ensure schema has version
+                if "version" not in schema_data:
+                    schema_data = dict(schema_data)  # Make a copy
+                    schema_data["version"] = stored_version or "1.0.0"
+                
+                # Validate schema has version
+                if "version" not in schema_data:
+                    raise ValueError(f"Schema {schema_id} does not have a version field")
+                
                 return schema_data
         return None
     

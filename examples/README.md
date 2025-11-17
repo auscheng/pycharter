@@ -79,7 +79,20 @@ Demonstrates the improved workflow where schemas, metadata, and coercion/validat
 - Coercion and validation rules stored separately
 - Runtime function retrieves and combines all components automatically
 
-**Note**: This example may reference functions that are not yet implemented. See the main README for current capabilities.
+### Contract Builder (`07_contract_builder.py`)
+Demonstrates how to construct consolidated data contracts from separate artifacts:
+1. Build contract from separate artifacts (schema, rules, metadata)
+2. Build contract from metadata store
+3. Track versions of all components
+4. Use built contract for runtime validation
+
+**Run**: `python examples/07_contract_builder.py`
+
+**Key Features**:
+- Combines separate artifacts into single consolidated contract
+- Tracks versions of all components (schema, coercion_rules, validation_rules, metadata)
+- Produces contract suitable for `validate_with_contract()`
+- Can build from artifacts or from metadata store
 
 ## Additional Examples
 

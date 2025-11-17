@@ -100,6 +100,7 @@ def example_round_trip():
     # Start with a schema
     original_schema = {
         "type": "object",
+        "version": "1.0.0",
         "properties": {
             "name": {"type": "string", "minLength": 1},
             "value": {"type": "number", "minimum": 0},

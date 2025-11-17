@@ -47,30 +47,49 @@ class MetadataStoreClient:
         self,
         schema_name: str,
         schema: Dict[str, Any],
-        version: Optional[str] = None,
+        version: str,
     ) -> str:
         """
         Store a JSON Schema in the database.
         
         Args:
             schema_name: Name/identifier for the schema
-            schema: JSON Schema dictionary
-            version: Optional version string
+            schema: JSON Schema dictionary (must contain "version" field or it will be added)
+            version: Required version string (must match schema["version"] if present)
             
         Returns:
             Schema ID or identifier
+            
+        Raises:
+            ValueError: If version is missing or doesn't match schema version
         """
+        # Ensure schema has version
+        if "version" not in schema:
+            schema = dict(schema)  # Make a copy
+            schema["version"] = version
+        elif schema.get("version") != version:
+            raise ValueError(
+                f"Version mismatch: provided version '{version}' does not match "
+                f"schema version '{schema.get('version')}'"
+            )
+        
         raise NotImplementedError("Subclasses must implement store_schema()")
     
-    def get_schema(self, schema_id: str) -> Optional[Dict[str, Any]]:
+    def get_schema(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         """
-        Retrieve a schema by ID.
+        Retrieve a schema by ID and optional version.
         
         Args:
             schema_id: Schema identifier
+            version: Optional version string (if None, returns latest version)
             
         Returns:
-            Schema dictionary or None if not found
+            Schema dictionary with version included, or None if not found
+            
+        Raises:
+            ValueError: If schema is found but doesn't have a version field
         """
         raise NotImplementedError("Subclasses must implement get_schema()")
     
@@ -274,9 +293,16 @@ class MetadataStoreClient:
             Complete schema dictionary with coercion and validation rules merged,
             or None if schema not found
         """
-        schema = self.get_schema(schema_id)
+        schema = self.get_schema(schema_id, version)
         if not schema:
             return None
+        
+        # Validate schema has version
+        if "version" not in schema:
+            raise ValueError(
+                f"Schema {schema_id} does not have a version field. "
+                "All schemas must be versioned."
+            )
         
         # Deep copy to avoid modifying original
         import copy

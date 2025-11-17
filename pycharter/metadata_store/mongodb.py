@@ -88,11 +88,34 @@ class MongoDBMetadataStore(MetadataStoreClient):
         self,
         schema_name: str,
         schema: Dict[str, Any],
-        version: Optional[str] = None,
+        version: str,
     ) -> str:
-        """Store a schema in MongoDB."""
+        """
+        Store a schema in MongoDB.
+        
+        Args:
+            schema_name: Name/identifier for the schema
+            schema: JSON Schema dictionary (must contain "version" field or it will be added)
+            version: Required version string (must match schema["version"] if present)
+            
+        Returns:
+            Schema ID
+            
+        Raises:
+            ValueError: If version is missing or doesn't match schema version
+        """
         if self._db is None:
             raise RuntimeError("Not connected. Call connect() first.")
+        
+        # Ensure schema has version
+        if "version" not in schema:
+            schema = dict(schema)  # Make a copy
+            schema["version"] = version
+        elif schema.get("version") != version:
+            raise ValueError(
+                f"Version mismatch: provided version '{version}' does not match "
+                f"schema version '{schema.get('version')}'"
+            )
         
         doc = {
             "name": schema_name,
@@ -102,21 +125,50 @@ class MongoDBMetadataStore(MetadataStoreClient):
         result = self._db.schemas.insert_one(doc)
         return str(result.inserted_id)
     
-    def get_schema(self, schema_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve a schema by ID."""
+    def get_schema(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve a schema by ID and optional version.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest version)
+            
+        Returns:
+            Schema dictionary with version included, or None if not found
+            
+        Raises:
+            ValueError: If schema is found but doesn't have a version field
+        """
         if self._db is None:
             raise RuntimeError("Not connected. Call connect() first.")
         
         from bson import ObjectId
         try:
             doc = self._db.schemas.find_one({"_id": ObjectId(schema_id)})
-            if doc:
-                return doc.get("schema")
         except Exception:
             # If ObjectId conversion fails, try as string
             doc = self._db.schemas.find_one({"_id": schema_id})
-            if doc:
-                return doc.get("schema")
+        
+        if doc:
+            schema = doc.get("schema")
+            stored_version = doc.get("version")
+            
+            # If version specified, check it matches
+            if version and stored_version and stored_version != version:
+                return None  # Version mismatch
+            
+            # Ensure schema has version
+            if schema and "version" not in schema:
+                schema = dict(schema)  # Make a copy
+                schema["version"] = stored_version or "1.0.0"
+            
+            # Validate schema has version
+            if schema and "version" not in schema:
+                raise ValueError(f"Schema {schema_id} does not have a version field")
+            
+            return schema
         return None
     
     def list_schemas(self) -> List[Dict[str, Any]]:

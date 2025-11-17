@@ -224,6 +224,7 @@ def example_7_dynamic_schema():
     # Define schema inline
     blog_post_schema = {
         "type": "object",
+        "version": "1.0.0",
         "required": ["title", "content", "author"],
         "properties": {
             "title": {

@@ -83,14 +83,37 @@ class RedisMetadataStore(MetadataStoreClient):
         self,
         schema_name: str,
         schema: Dict[str, Any],
-        version: Optional[str] = None,
+        version: str,
     ) -> str:
-        """Store a schema in Redis."""
+        """
+        Store a schema in Redis.
+        
+        Args:
+            schema_name: Name/identifier for the schema
+            schema: JSON Schema dictionary (must contain "version" field or it will be added)
+            version: Required version string (must match schema["version"] if present)
+            
+        Returns:
+            Schema ID
+            
+        Raises:
+            ValueError: If version is missing or doesn't match schema version
+        """
         if not self._client:
             raise RuntimeError("Not connected. Call connect() first.")
         
+        # Ensure schema has version
+        if "version" not in schema:
+            schema = dict(schema)  # Make a copy
+            schema["version"] = version
+        elif schema.get("version") != version:
+            raise ValueError(
+                f"Version mismatch: provided version '{version}' does not match "
+                f"schema version '{schema.get('version')}'"
+            )
+        
         # Generate schema ID
-        schema_id = f"{schema_name}:{version}" if version else schema_name
+        schema_id = f"{schema_name}:{version}"
         
         # Store schema data
         schema_data = {
@@ -109,15 +132,57 @@ class RedisMetadataStore(MetadataStoreClient):
         
         return schema_id
     
-    def get_schema(self, schema_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve a schema by ID."""
+    def get_schema(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve a schema by ID and optional version.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest version)
+            
+        Returns:
+            Schema dictionary with version included, or None if not found
+            
+        Raises:
+            ValueError: If schema is found but doesn't have a version field
+        """
         if not self._client:
             raise RuntimeError("Not connected. Call connect() first.")
         
+        # If version specified, try to get specific version
+        if version:
+            # Try versioned key first
+            versioned_id = f"{schema_id.split(':')[0]}:{version}" if ":" not in schema_id else f"{schema_id.rsplit(':', 1)[0]}:{version}"
+            data = self._client.get(self._key("schemas", versioned_id))
+            if data:
+                schema_data = json.loads(data)
+                schema = schema_data.get("schema")
+                if schema and "version" not in schema:
+                    schema = dict(schema)
+                    schema["version"] = version
+                if schema and "version" not in schema:
+                    raise ValueError(f"Schema {schema_id} does not have a version field")
+                return schema
+        
+        # Try original schema_id
         data = self._client.get(self._key("schemas", schema_id))
         if data:
             schema_data = json.loads(data)
-            return schema_data.get("schema")
+            schema = schema_data.get("schema")
+            stored_version = schema_data.get("version")
+            
+            # Ensure schema has version
+            if schema and "version" not in schema:
+                schema = dict(schema)  # Make a copy
+                schema["version"] = stored_version or "1.0.0"
+            
+            # Validate schema has version
+            if schema and "version" not in schema:
+                raise ValueError(f"Schema {schema_id} does not have a version field")
+            
+            return schema
         return None
     
     def list_schemas(self) -> List[Dict[str, Any]]:

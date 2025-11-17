@@ -1,8 +1,9 @@
 """
 PyCharter - Data Contract Management and Validation
 
-Five core services:
+Six core services:
 1. Contract Parser - Reads and decomposes data contract files
+1b. Contract Builder - Constructs consolidated contracts from separate artifacts
 2. Metadata Store Client - Database operations for metadata storage
 3. Pydantic Generator - Generates Pydantic models from JSON Schema
 4. JSON Schema Converter - Converts Pydantic models to JSON Schema
@@ -16,6 +17,13 @@ from pycharter.contract_parser import (
     parse_contract,
     parse_contract_file,
     ContractMetadata,
+)
+
+# Service 1b: Contract Builder
+from pycharter.contract_builder import (
+    build_contract,
+    build_contract_from_store,
+    ContractArtifacts,
 )
 
 # Service 2: Metadata Store Client
@@ -78,6 +86,10 @@ __all__ = [
     "parse_contract",
     "parse_contract_file",
     "ContractMetadata",
+    # Contract Builder
+    "build_contract",
+    "build_contract_from_store",
+    "ContractArtifacts",
     # Metadata Store Client
     "MetadataStoreClient",
     "InMemoryMetadataStore",
