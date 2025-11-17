@@ -146,6 +146,214 @@ def example_with_validations():
     print(f"  Price exclusive minimum: {price_prop.get('exclusiveMinimum')}")
 
 
+def example_nested_models():
+    """Convert model with nested Pydantic models."""
+    print("\n" + "=" * 70)
+    print("Example 4f: Nested Models")
+    print("=" * 70)
+    
+    # Define nested models
+    class Address(BaseModel):
+        """Address information."""
+        street: str = Field(..., min_length=1)
+        city: str = Field(..., min_length=1)
+        state: str = Field(..., min_length=2, max_length=2)
+        zipcode: str = Field(..., pattern="^\\d{5}(-\\d{4})?$")
+    
+    class Contact(BaseModel):
+        """Contact information."""
+        email: str = Field(..., description="Email address")
+        phone: str = Field(default="", description="Phone number")
+    
+    class Person(BaseModel):
+        """Person with nested address and contact."""
+        name: str = Field(..., min_length=1)
+        age: int = Field(..., ge=0, le=150)
+        address: Address  # Nested model
+        contact: Contact  # Nested model
+    
+    # Convert to schema
+    schema = to_dict(Person)
+    
+    print(f"\n✓ Converted Person model with nested Address and Contact")
+    print(f"  Top-level properties: {list(schema.get('properties', {}).keys())}")
+    
+    # Check nested address schema
+    address_prop = schema.get('properties', {}).get('address', {})
+    print(f"\n  Address (nested) schema:")
+    print(f"    Type: {address_prop.get('type')}")
+    print(f"    Properties: {list(address_prop.get('properties', {}).keys())}")
+    print(f"    Required: {address_prop.get('required', [])}")
+    
+    # Check nested contact schema
+    contact_prop = schema.get('properties', {}).get('contact', {})
+    print(f"\n  Contact (nested) schema:")
+    print(f"    Type: {contact_prop.get('type')}")
+    print(f"    Properties: {list(contact_prop.get('properties', {}).keys())}")
+    
+    # Verify nested constraints are preserved
+    address_street = address_prop.get('properties', {}).get('street', {})
+    address_zipcode = address_prop.get('properties', {}).get('zipcode', {})
+    print(f"\n  Nested constraints preserved:")
+    print(f"    Address.street minLength: {address_street.get('minLength')}")
+    print(f"    Address.zipcode pattern: {address_zipcode.get('pattern')}")
+
+
+def example_nested_arrays():
+    """Convert model with arrays of nested models."""
+    print("\n" + "=" * 70)
+    print("Example 4g: Arrays of Nested Models")
+    print("=" * 70)
+    
+    # Define nested model
+    class OrderItem(BaseModel):
+        """Order item with product details."""
+        product_id: str = Field(..., description="Product identifier")
+        quantity: int = Field(..., ge=1, description="Quantity ordered")
+        price: float = Field(..., ge=0, description="Unit price")
+    
+    class Order(BaseModel):
+        """Order with array of items."""
+        order_id: str = Field(..., description="Order identifier")
+        customer_id: str = Field(..., description="Customer identifier")
+        items: list[OrderItem] = Field(..., min_length=1, description="Order items")
+        total: float = Field(..., ge=0, description="Total order amount")
+    
+    # Convert to schema
+    schema = to_dict(Order)
+    
+    print(f"\n✓ Converted Order model with array of OrderItem")
+    print(f"  Properties: {list(schema.get('properties', {}).keys())}")
+    
+    # Check array of nested models
+    items_prop = schema.get('properties', {}).get('items', {})
+    print(f"\n  Items (array) schema:")
+    print(f"    Type: {items_prop.get('type')}")
+    print(f"    Min items: {items_prop.get('minItems')}")
+    
+    # Check nested item schema
+    item_schema = items_prop.get('items', {})
+    print(f"\n  OrderItem (nested in array) schema:")
+    print(f"    Type: {item_schema.get('type')}")
+    print(f"    Properties: {list(item_schema.get('properties', {}).keys())}")
+    print(f"    Required: {item_schema.get('required', [])}")
+    
+    # Verify nested constraints
+    item_quantity = item_schema.get('properties', {}).get('quantity', {})
+    print(f"\n  Nested array item constraints preserved:")
+    print(f"    OrderItem.quantity minimum: {item_quantity.get('minimum')}")
+
+
+def example_deeply_nested():
+    """Convert model with deeply nested structures."""
+    print("\n" + "=" * 70)
+    print("Example 4h: Deeply Nested Structures")
+    print("=" * 70)
+    
+    # Deeply nested models
+    class Coordinates(BaseModel):
+        """Geographic coordinates."""
+        latitude: float = Field(..., ge=-90, le=90)
+        longitude: float = Field(..., ge=-180, le=180)
+    
+    class Location(BaseModel):
+        """Location with coordinates."""
+        name: str = Field(..., description="Location name")
+        coordinates: Coordinates  # Nested model
+    
+    class Warehouse(BaseModel):
+        """Warehouse information."""
+        warehouse_id: str = Field(..., description="Warehouse identifier")
+        location: Location  # Nested model containing another nested model
+        capacity: int = Field(..., ge=0)
+    
+    class Product(BaseModel):
+        """Product with warehouse information."""
+        product_id: str = Field(..., description="Product identifier")
+        name: str = Field(..., min_length=1)
+        warehouses: list[Warehouse] = Field(default_factory=list)  # Array of nested models
+    
+    # Convert to schema
+    schema = to_dict(Product)
+    
+    print(f"\n✓ Converted Product model with deeply nested structures")
+    print(f"  Top-level properties: {list(schema.get('properties', {}).keys())}")
+    
+    # Navigate through nested structure
+    warehouses_prop = schema.get('properties', {}).get('warehouses', {})
+    warehouse_item = warehouses_prop.get('items', {})
+    warehouse_location = warehouse_item.get('properties', {}).get('location', {})
+    location_coords = warehouse_location.get('properties', {}).get('coordinates', {})
+    
+    print(f"\n  Deep nesting structure:")
+    print(f"    Product.warehouses (array)")
+    print(f"      → Warehouse.location (nested)")
+    print(f"        → Location.coordinates (nested)")
+    print(f"          → Coordinates.latitude/longitude")
+    
+    print(f"\n  Deeply nested constraints preserved:")
+    print(f"    Coordinates.latitude range: [{location_coords.get('properties', {}).get('latitude', {}).get('minimum')}, {location_coords.get('properties', {}).get('latitude', {}).get('maximum')}]")
+    print(f"    Coordinates.longitude range: [{location_coords.get('properties', {}).get('longitude', {}).get('minimum')}, {location_coords.get('properties', {}).get('longitude', {}).get('maximum')}]")
+
+
+def example_nested_round_trip():
+    """Demonstrate round-trip with nested models."""
+    print("\n" + "=" * 70)
+    print("Example 4i: Round-Trip with Nested Models")
+    print("=" * 70)
+    
+    from pycharter import from_dict
+    
+    # Create a model with nested structure
+    class Category(BaseModel):
+        name: str = Field(..., min_length=1)
+        description: str = Field(default="")
+    
+    class Product(BaseModel):
+        product_id: str
+        name: str = Field(..., min_length=1)
+        category: Category
+        tags: list[str] = Field(default_factory=list)
+    
+    # Step 1: Convert model to schema
+    print("\n1. Pydantic model → JSON Schema")
+    original_schema = to_dict(Product)
+    print(f"   ✓ Converted Product model to schema")
+    print(f"     Properties: {list(original_schema.get('properties', {}).keys())}")
+    
+    # Check nested category
+    category_prop = original_schema.get('properties', {}).get('category', {})
+    print(f"     Category (nested) properties: {list(category_prop.get('properties', {}).keys())}")
+    
+    # Step 2: Convert schema back to model
+    print("\n2. JSON Schema → Pydantic model")
+    ProductModel2 = from_dict(original_schema, "Product2")
+    print(f"   ✓ Generated ProductModel2 from schema")
+    
+    # Step 3: Create instance and verify
+    print("\n3. Create instance with nested data")
+    product = ProductModel2(
+        product_id="prod-123",
+        name="Widget",
+        category={"name": "Electronics", "description": "Electronic items"},
+        tags=["popular", "new"]
+    )
+    print(f"   ✓ Created product: {product.name}")
+    print(f"   ✓ Category: {product.category.name} - {product.category.description}")
+    print(f"   ✓ Tags: {product.tags}")
+    
+    # Step 4: Convert back to schema
+    print("\n4. Pydantic model → JSON Schema (round-trip)")
+    round_trip_schema = to_dict(ProductModel2)
+    print(f"   ✓ Round-trip conversion successful")
+    print(f"     Original has {len(original_schema.get('properties', {}))} properties")
+    print(f"     Round-trip has {len(round_trip_schema.get('properties', {}))} properties")
+    
+    # Verify nested structure preserved
+    rt_category = round_trip_schema.get('properties', {}).get('category', {})
+    print(f"     Nested category preserved: {rt_category.get('type') == 'object'}")
+
+
 if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("PyCharter - JSON Schema Converter Service Examples")
@@ -157,6 +365,10 @@ if __name__ == "__main__":
     example_to_file()
     example_round_trip()
     example_with_validations()
+    example_nested_models()
+    example_nested_arrays()
+    example_deeply_nested()
+    example_nested_round_trip()
     
     print("\n" + "=" * 70)
     print("✓ All JSON Schema Converter examples completed!")

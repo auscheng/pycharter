@@ -21,6 +21,27 @@ from pycharter.contract_parser import (
 # Service 2: Metadata Store Client
 from pycharter.metadata_store import MetadataStoreClient
 
+# Optional metadata store implementations
+try:
+    from pycharter.metadata_store import InMemoryMetadataStore
+except ImportError:
+    InMemoryMetadataStore = None
+
+try:
+    from pycharter.metadata_store import MongoDBMetadataStore
+except ImportError:
+    MongoDBMetadataStore = None
+
+try:
+    from pycharter.metadata_store import PostgresMetadataStore
+except ImportError:
+    PostgresMetadataStore = None
+
+try:
+    from pycharter.metadata_store import RedisMetadataStore
+except ImportError:
+    RedisMetadataStore = None
+
 # Service 3: Pydantic Generator
 from pycharter.pydantic_generator import (
     generate_model,
@@ -53,6 +74,10 @@ __all__ = [
     "ContractMetadata",
     # Metadata Store Client
     "MetadataStoreClient",
+    "InMemoryMetadataStore",
+    "MongoDBMetadataStore",
+    "PostgresMetadataStore",
+    "RedisMetadataStore",
     # Pydantic Generator
     "generate_model",
     "generate_model_file",
