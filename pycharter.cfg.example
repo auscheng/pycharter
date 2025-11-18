@@ -1,0 +1,14 @@
+# PyCharter Configuration File
+# 
+# Copy this file to pycharter.cfg and update with your database credentials.
+# This follows the same pattern as Airflow's airflow.cfg
+
+[database]
+# Database connection string
+# Format: postgresql://user:password@host:port/database
+sql_alchemy_conn = postgresql://user:password@localhost:5432/pycharter
+
+# Alternative: You can also use environment variables:
+#   PYCHARTER__DATABASE__SQL_ALCHEMY_CONN=postgresql://user:password@localhost:5432/pycharter
+#   PYCHARTER_DATABASE_URL=postgresql://user:password@localhost:5432/pycharter
+

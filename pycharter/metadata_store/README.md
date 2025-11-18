@@ -71,7 +71,26 @@ schema_id = store.store_schema("user", {"type": "object"}, version="1.0")
 schema = store.get_schema(schema_id)
 ```
 
-**Note**: Tables are automatically created on first connection.
+**Schema Management**: 
+- Schema is automatically initialized and validated on `connect()`
+- Version tracking ensures schema compatibility
+- Use `store.get_schema_info()` to check schema status
+- See [SCHEMA_MANAGEMENT.md](SCHEMA_MANAGEMENT.md) for details
+
+**CLI Tools**:
+```bash
+# Initialize schema manually
+pycharter db init postgresql://user:pass@localhost/pycharter
+
+# Upgrade to latest version
+pycharter db upgrade postgresql://user:pass@localhost/pycharter
+
+# Check current revision
+pycharter db current postgresql://user:pass@localhost/pycharter
+
+# See migration history
+pycharter db history
+```
 
 ---
 

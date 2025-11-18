@@ -1,0 +1,591 @@
+schema:
+  type: object
+  title: Aircraft
+  version: 1.0.0
+  properties:
+    metadata:
+      description: Metadata when the record is processed
+      title: Metadata
+      type: object
+    REGISTRATION:
+      description: Registration of the Aircraft
+      examples:
+      - BHNR
+      - LD33F
+      maxLength: 10
+      title: Registration
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 10
+        non_empty_string: null
+    VALID_SINCE:
+      description: Start of validity
+      format: date-time
+      title: Valid Since
+      type: string
+      coercion: coerce_to_datetime
+    VALID_UNTIL:
+      description: End of validity
+      format: date-time
+      title: Valid Until
+      type: string
+      coercion: coerce_to_datetime
+    AC_OPERATOR:
+      description: Aircraft Operator
+      examples:
+      - LD
+      - CX
+      maxLength: 3
+      title: Ac Operator
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 3
+        non_empty_string: null
+    AC_OWNER:
+      description: Owner of the aircraft
+      examples:
+      - LD
+      - CX
+      maxLength: 3
+      title: Ac Owner
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 3
+        non_empty_string: null
+    AC_SUBTYPE:
+      description: Subtype of the aircraft
+      maxLength: 3
+      title: Ac Subtype
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 3
+        non_empty_string: null
+    AC_LOGICAL_NO:
+      description: Logical number of the Aircraft
+      title: Ac Logical No
+      type: integer
+      coercion: coerce_to_integer
+    AC_STATE:
+      description: Status of Aircraft(''R''=real and ''O''=overflow)
+      enum:
+      - R
+      - O
+      maxLength: 1
+      title: Ac State
+      type: string
+      coercion: coerce_to_string
+      validations:
+        only_allow:
+          allowed_values:
+          - R
+          - O
+    DRY_OPERATING_WGT:
+      description: Dry Operating Weight (kg)
+      title: Dry Operating Wgt
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    MAX_TAKEOFF_WGT:
+      description: Max Takeoff Weight (kg)
+      title: Max Takeoff Wgt
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    CARGO_CAPACITY:
+      description: Cargo Capacity (kg)
+      title: Cargo Capacity
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    FUEL_CAPACITY:
+      description: Fuel Capacity (kg)
+      title: Fuel Capacity
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    AVG_FUEL_CONSUMP:
+      description: Average Fuel Consumption (kg per hour)
+      title: Avg Fuel Consump
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    AC_INDEX:
+      description: Aircraft index
+      title: Ac Index
+      type: integer
+      coercion: coerce_to_integer
+    CREWSIZE_COCKPIT:
+      description: Number of Cockpit Crewmembers
+      title: Crewsize Cockpit
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    CREWSIZE_CABIN:
+      description: Number of Cabin Crewmembers
+      title: Crewsize Cabin
+      type: integer
+      coercion: coerce_to_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    STD_VERSION:
+      description: Aircraft Standard Version
+      maxLength: 20
+      title: Std Version
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 20
+        non_empty_string: null
+    AP_RESTRICTION:
+      description: Airport Restriction - e.g. Political Reason, Performance(''Y''
+        or ''N'')
+      examples:
+      - N
+      - Y
+      - R
+      maxLength: 1
+      title: Ap Restriction
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 1
+        non_empty_string: null
+    AC_OWNER_NAME:
+      description: Full Name of Owner
+      maxLength: 30
+      title: Ac Owner Name
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 30
+        non_empty_string: null
+    AC_SUBTYPE_NAME:
+      description: Full Name of Subtype
+      maxLength: 30
+      title: Ac Subtype Name
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 30
+        non_empty_string: null
+    AC_CATEGORY:
+      description: SSIM-Category of Aircraft
+      maxLength: 1
+      title: Ac Category
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 1
+        non_empty_string: null
+    REMARK:
+      anyOf:
+      - maxLength: 80
+        type: string
+      - type: 'null'
+      default: null
+      description: Additional remarks
+      title: Remark
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 80
+    FUEL_MEASURE_UNIT:
+      description: Unit for fuel
+      maxLength: 3
+      title: Fuel Measure Unit
+      type: string
+      coercion: coerce_to_string
+      validations:
+        max_length:
+          threshold: 3
+        non_empty_string: null
+    AC_CALLSIGN:
+      anyOf:
+      - maxLength: 5
+        type: string
+      - type: 'null'
+      default: null
+      description: Callsign of aircraft
+      title: Ac Callsign
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 5
+    RADIO:
+      anyOf:
+      - maxLength: 1
+        type: string
+      - type: 'null'
+      default: null
+      description: Radio type
+      title: Radio
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 1
+    NOISE:
+      anyOf:
+      - type: integer
+      - type: 'null'
+      default: null
+      description: ICAO noise chapter
+      title: Noise
+      coercion: coerce_to_nullable_integer
+      validations:
+        greater_than_or_equal_to:
+          threshold: 0
+    PHONE:
+      anyOf:
+      - maxLength: 20
+        type: string
+      - type: 'null'
+      default: null
+      description: Onboard mobile phone number
+      title: Phone
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 20
+    SPECIAL_EQUIPMENT:
+      anyOf:
+      - maxLength: 40
+        type: string
+      - type: 'null'
+      default: null
+      description: Special equipment
+      title: Special Equipment
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 40
+    ACARS:
+      anyOf:
+      - maxLength: 1
+        type: string
+      - type: 'null'
+      default: null
+      description: ACARS type
+      enum:
+      - V
+      - H
+      - S
+      title: Acars
+      coercion: coerce_to_nullable_string
+      validations:
+        only_allow:
+          allowed_values:
+          - V
+          - H
+          - S
+    ALT_REG:
+      anyOf:
+      - maxLength: 10
+        type: string
+      - type: 'null'
+      default: null
+      description: Alternate Registration
+      title: Alt Reg
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 10
+    RECORD_ID:
+      default: 0
+      description: Record ID
+      title: Record Id
+      type: integer
+      coercion: coerce_to_integer
+    LAST_UPDATE:
+      anyOf:
+      - format: date-time
+        type: string
+      - type: 'null'
+      default: null
+      description: Timestamp of last update
+      title: Last Update
+      coercion: coerce_to_nullable_datetime
+    LAST_UPDATE_USER_ID:
+      anyOf:
+      - maxLength: 32
+        type: string
+      - type: 'null'
+      default: null
+      description: User ID of last update
+      title: Last Update User Id
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 32
+    STD_VERSION_ALT_1:
+      anyOf:
+      - maxLength: 20
+        type: string
+      - type: 'null'
+      default: null
+      description: Alternative Aircraft Version 1
+      title: Std Version Alt 1
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 20
+    STD_VERSION_ALT_2:
+      anyOf:
+      - maxLength: 20
+        type: string
+      - type: 'null'
+      default: null
+      description: Alternative Aircraft Version 2
+      title: Std Version Alt 2
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 20
+    STD_VERSION_ALT_3:
+      anyOf:
+      - maxLength: 20
+        type: string
+      - type: 'null'
+      default: null
+      description: Alternative Aircraft Version 3
+      title: Std Version Alt 3
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 20
+    STD_VERSION_ALT_4:
+      anyOf:
+      - maxLength: 20
+        type: string
+      - type: 'null'
+      default: null
+      description: Alternative Aircraft Version 4
+      title: Std Version Alt 4
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 20
+    ILS_EQUIPMENT:
+      default: I
+      description: aircraft equipment supporting ILS CAT approaches(I, II, IIIa, IIIb)
+      enum:
+      - I
+      - II
+      - IIIa
+      - IIIb
+      maxLength: 4
+      title: Ils Equipment
+      type: string
+      coercion: coerce_to_string
+      validations:
+        only_allow:
+          allowed_values:
+          - I
+          - II
+          - IIIa
+          - IIIb
+    AUTOLAND:
+      default: N
+      description: Autoland capability indicator
+      enum:
+      - Y
+      - N
+      maxLength: 1
+      title: Autoland
+      type: string
+      coercion: coerce_to_string
+      validations:
+        only_allow:
+          allowed_values:
+          - Y
+          - N
+    HOMEBASE:
+      anyOf:
+      - maxLength: 3
+        type: string
+      - type: 'null'
+      default: null
+      description: Homebase of the aircraft (IATA CODE)
+      title: Homebase
+      coercion: coerce_to_nullable_string
+      validations:
+        max_length:
+          threshold: 3
+  required:
+  - metadata
+  - REGISTRATION
+  - VALID_SINCE
+  - VALID_UNTIL
+  - AC_OPERATOR
+  - AC_OWNER
+  - AC_SUBTYPE
+  - AC_LOGICAL_NO
+  - AC_STATE
+  - DRY_OPERATING_WGT
+  - MAX_TAKEOFF_WGT
+  - CARGO_CAPACITY
+  - FUEL_CAPACITY
+  - AVG_FUEL_CONSUMP
+  - AC_INDEX
+  - CREWSIZE_COCKPIT
+  - CREWSIZE_CABIN
+  - STD_VERSION
+  - AP_RESTRICTION
+  - AC_OWNER_NAME
+  - AC_SUBTYPE_NAME
+  - AC_CATEGORY
+  - FUEL_MEASURE_UNIT
+metadata:
+  title: Aircraft
+  status: active
+  type: object
+  description: Default metadata for Aircraft
+  validation_title: Aircraft
+  created_at: '2025-08-28T04:10:45.905705+00:00'
+  updated_at: '2025-08-28T04:10:45.905712+00:00'
+  created_by: IOC DE
+  updated_by: IOC DE
+  required: []
+  properties: []
+  examples: []
+  is_data_feed: true
+  data_feed_association:
+  - title: Aircraft
+    type: Operational
+  pulls_from:
+  - NetlineOpsReplica
+  pushes_to:
+  - SCR
+  - Fleetwise
+  system_sources:
+  - NetlineBase
+  dependencies:
+  - AircraftType
+  - Operator
+  - Airport
+  business_owners:
+  - IOC
+  domain: NetlineOps configuration
+  data_quality:
+    accuracy: 0.0
+    monitoring_enabled: false
+    sla: null
+    total_records: 905
+    last_updated: '2024-01-01T00:00:00'
+  governance_rules:
+    data_retention:
+      days: 2555
+      reason: Regulatory compliance for aircraft records
+    pii_fields:
+      fields: []
+    sensitivity: Internal
+    access_control:
+      read:
+      - operations-team
+      - data-team
+      write:
+      - operations-team
+  business_rules:
+    validity_period:
+      description: VALID_SINCE must be before VALID_UNTIL
+      enforced: true
+    weight_consistency:
+      description: MAX_TAKEOFF_WGT should be >= DRY_OPERATING_WGT
+      enforced: false
+  serve:
+    api:
+      type: GET
+      endpoint: /v1/aircraft
+      rate_limit: 120/min
+      cache_ttl: 3600
+      confluence_page: https://cathaypacific-prod.atlassian.net/wiki/spaces/DEN/pages/2631027294902/Aircraft
+      params:
+      - name: registration
+        in: query
+        required: false
+        description: Filter by registration
+        schema:
+          type: string
+        example: BLXN
+      - name: effective_date
+        in: query
+        required: false
+        description: Filter by effective date in ISO format, default will be request
+          timestamp
+        example: '2025-03-29T00:00:00Z'
+        schema:
+          type: string
+          format: date-time
+  indexes:
+  - cluster: ioc-de-{env}
+    database: internal
+    collection: replica_nlo_aircraft_serve
+    indexes:
+    - aircraft_unique_index:
+        registration: 1
+        valid_since: 1
+      unique: true
+      background: true
+  - cluster: ioc-de-{env}
+    database: internal
+    collection: replica_nlo_aircraft_staging
+    indexes:
+    - aircraft_unique_index:
+        registration: 1
+        valid_since: 1
+      unique: true
+      background: true
+  changelog:
+  - version: 1.0.0
+    date: '2025-08-28T04:10:45.905715+00:00'
+    author: IOC
+    type: initial
+    changes:
+    - 'Initial metadata collected from upstream for: Aircraft'
+ownership:
+  owner: operations-team
+  team: data-engineering
+  additional_info: {}
+governance_rules:
+  data_retention:
+    days: 2555
+    reason: Regulatory compliance for aircraft records
+  pii_fields:
+    fields: []
+  sensitivity: Internal
+  access_control:
+    read:
+    - operations-team
+    - data-team
+    write:
+    - operations-team
+versions:
+  schema: 1.0.0
+  coercion_rules: 1.0.0
+  validation_rules: 1.0.0
+  metadata: 1.0.0

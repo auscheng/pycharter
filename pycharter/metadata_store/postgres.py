@@ -17,6 +17,23 @@ except ImportError:
 
 from pycharter.metadata_store.client import MetadataStoreClient
 
+try:
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect
+    ALEMBIC_AVAILABLE = True
+except ImportError:
+    ALEMBIC_AVAILABLE = False
+    MigrationContext = None
+    create_engine = None
+    inspect = None
+
+try:
+    from pycharter.config import get_database_url
+    CONFIG_AVAILABLE = True
+except ImportError:
+    CONFIG_AVAILABLE = False
+    get_database_url = None
+
 
 class PostgresMetadataStore(MetadataStoreClient):
     """
@@ -27,6 +44,8 @@ class PostgresMetadataStore(MetadataStoreClient):
     - governance_rules: Governance rules
     - ownership: Ownership information
     - metadata: Additional metadata
+    - coercion_rules: Coercion rules for data transformation
+    - validation_rules: Validation rules for data validation
     
     Connection string format: postgresql://[user[:password]@][host][:port][/database]
     
@@ -34,6 +53,8 @@ class PostgresMetadataStore(MetadataStoreClient):
         >>> store = PostgresMetadataStore("postgresql://user:pass@localhost/pycharter")
         >>> store.connect()
         >>> schema_id = store.store_schema("user", {"type": "object"}, version="1.0")
+        >>> store.store_coercion_rules(schema_id, {"age": "coerce_to_integer"}, version="1.0")
+        >>> store.store_validation_rules(schema_id, {"age": {"is_positive": {}}}, version="1.0")
     """
     
     def __init__(self, connection_string: Optional[str] = None):
@@ -41,23 +62,70 @@ class PostgresMetadataStore(MetadataStoreClient):
         Initialize PostgreSQL metadata store.
         
         Args:
-            connection_string: PostgreSQL connection string
+            connection_string: Optional PostgreSQL connection string.
+                              If not provided, will use configuration from:
+                              - PYCHARTER__DATABASE__SQL_ALCHEMY_CONN env var
+                              - PYCHARTER_DATABASE_URL env var
+                              - pycharter.cfg config file
+                              - alembic.ini config file
         """
         if not POSTGRES_AVAILABLE:
             raise ImportError(
                 "psycopg2 is required for PostgresMetadataStore. "
                 "Install with: pip install psycopg2-binary"
             )
+        
+        # If no connection string provided, try to get from configuration
+        if not connection_string and CONFIG_AVAILABLE:
+            connection_string = get_database_url()
+            if connection_string:
+                # Store it for later use
+                pass
+        
+        if not connection_string:
+            raise ValueError(
+                "connection_string is required. Provide it directly, or configure it via:\n"
+                "  - Environment variable: PYCHARTER__DATABASE__SQL_ALCHEMY_CONN or PYCHARTER_DATABASE_URL\n"
+                "  - Config file: pycharter.cfg [database] sql_alchemy_conn\n"
+                "  - Config file: alembic.ini sqlalchemy.url"
+            )
+        
         super().__init__(connection_string)
         self._connection = None
     
-    def connect(self) -> None:
-        """Connect to PostgreSQL and create tables if needed."""
+    def connect(self, auto_initialize: bool = True, validate_schema_on_connect: bool = True) -> None:
+        """
+        Connect to PostgreSQL and ensure schema is initialized.
+        
+        Args:
+            auto_initialize: If True, automatically initialize schema if missing
+            validate_schema_on_connect: If True, validate schema after connection
+            
+        Raises:
+            ValueError: If connection_string is missing
+            RuntimeError: If schema validation fails and auto_initialize is False
+        """
         if not self.connection_string:
             raise ValueError("connection_string is required for PostgreSQL")
         
         self._connection = psycopg2.connect(self.connection_string)
-        self._create_tables()
+        
+        # Check if schema is initialized using Alembic
+        if validate_schema_on_connect:
+            if not self._is_schema_initialized():
+                if auto_initialize:
+                    # Schema not initialized, but we can't auto-initialize here
+                    # User should run 'pycharter db init' first
+                    raise RuntimeError(
+                        "Database schema is not initialized. "
+                        "Please run 'pycharter db init' to initialize the schema, "
+                        "or set auto_initialize=False and validate_schema_on_connect=False."
+                    )
+                else:
+                    raise RuntimeError(
+                        "Database schema is not initialized. "
+                        "Please run 'pycharter db init' to initialize the schema."
+                    )
     
     def disconnect(self) -> None:
         """Close PostgreSQL connection."""
@@ -65,63 +133,62 @@ class PostgresMetadataStore(MetadataStoreClient):
             self._connection.close()
             self._connection = None
     
-    def _create_tables(self) -> None:
-        """Create tables if they don't exist."""
-        with self._connection.cursor() as cur:
-            # Schemas table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS schemas (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    version VARCHAR(50),
-                    schema_data JSONB NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(name, version)
-                )
-            """)
-            
-            # Governance rules table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS governance_rules (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    rule_definition JSONB NOT NULL,
-                    schema_id INTEGER REFERENCES schemas(id),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            # Ownership table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS ownership (
-                    resource_id VARCHAR(255) PRIMARY KEY,
-                    owner VARCHAR(255) NOT NULL,
-                    team VARCHAR(255),
-                    additional_info JSONB,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            # Metadata table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS metadata (
-                    id SERIAL PRIMARY KEY,
-                    resource_id VARCHAR(255) NOT NULL,
-                    resource_type VARCHAR(50) NOT NULL,
-                    metadata_data JSONB NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(resource_id, resource_type)
-                )
-            """)
-            
-            # Create indexes
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_schemas_name ON schemas(name)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_schemas_version ON schemas(version)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_governance_schema_id ON governance_rules(schema_id)")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_metadata_resource ON metadata(resource_id, resource_type)")
-            
-            self._connection.commit()
+    def _is_schema_initialized(self) -> bool:
+        """
+        Check if the database schema is initialized.
+        
+        Returns:
+            True if schema is initialized, False otherwise
+        """
+        if not self._connection:
+            return False
+        
+        try:
+            # Check if required tables exist
+            with self._connection.cursor() as cur:
+                cur.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'schemas'
+                    )
+                """)
+                return cur.fetchone()[0]
+        except Exception:
+            return False
+    
+    def get_schema_info(self) -> Dict[str, Any]:
+        """
+        Get information about the current database schema.
+        
+        Returns:
+            Dictionary with schema information:
+            {
+                "revision": str or None,
+                "initialized": bool,
+                "message": str
+            }
+        """
+        if not self._connection:
+            raise RuntimeError("Not connected. Call connect() first.")
+        
+        initialized = self._is_schema_initialized()
+        
+        # Try to get Alembic revision if available
+        revision = None
+        if ALEMBIC_AVAILABLE and initialized:
+            try:
+                engine = create_engine(self.connection_string)
+                with engine.connect() as conn:
+                    context = MigrationContext.configure(conn)
+                    revision = context.get_current_revision()
+            except Exception:
+                pass
+        
+        return {
+            "revision": revision,
+            "initialized": initialized,
+            "message": f"Schema initialized: {initialized}" + (f" (revision: {revision})" if revision else "")
+        }
     
     def store_schema(
         self,
@@ -382,5 +449,165 @@ class PostgresMetadataStore(MetadataStoreClient):
                 if isinstance(metadata_data, str):
                     return json.loads(metadata_data)
                 return metadata_data
+        return None
+    
+    def store_coercion_rules(
+        self,
+        schema_id: str,
+        coercion_rules: Dict[str, Any],
+        version: Optional[str] = None,
+    ) -> str:
+        """
+        Store coercion rules for a schema.
+        
+        Args:
+            schema_id: Schema identifier
+            coercion_rules: Dictionary of coercion rules
+            version: Optional version string
+            
+        Returns:
+            Rule ID or identifier
+        """
+        if not self._connection:
+            raise RuntimeError("Not connected. Call connect() first.")
+        
+        # Convert schema_id to integer if it's a string
+        schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
+        
+        with self._connection.cursor() as cur:
+            cur.execute("""
+                INSERT INTO coercion_rules (schema_id, version, rules)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (schema_id, version)
+                DO UPDATE SET rules = EXCLUDED.rules
+                RETURNING id
+            """, (schema_id_int, version, json.dumps(coercion_rules)))
+            
+            rule_id = cur.fetchone()[0]
+            self._connection.commit()
+            return f"coercion:{schema_id}" + (f":{version}" if version else "")
+    
+    def get_coercion_rules(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve coercion rules for a schema.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest version)
+            
+        Returns:
+            Dictionary of coercion rules, or None if not found
+        """
+        if not self._connection:
+            raise RuntimeError("Not connected. Call connect() first.")
+        
+        # Convert schema_id to integer if it's a string
+        schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
+        
+        with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
+            if version:
+                cur.execute("""
+                    SELECT rules
+                    FROM coercion_rules
+                    WHERE schema_id = %s AND version = %s
+                """, (schema_id_int, version))
+            else:
+                # Get latest version (most recent by created_at)
+                cur.execute("""
+                    SELECT rules
+                    FROM coercion_rules
+                    WHERE schema_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """, (schema_id_int,))
+            
+            row = cur.fetchone()
+            if row:
+                rules = row["rules"]
+                if isinstance(rules, str):
+                    return json.loads(rules)
+                return rules
+        return None
+    
+    def store_validation_rules(
+        self,
+        schema_id: str,
+        validation_rules: Dict[str, Any],
+        version: Optional[str] = None,
+    ) -> str:
+        """
+        Store validation rules for a schema.
+        
+        Args:
+            schema_id: Schema identifier
+            validation_rules: Dictionary of validation rules
+            version: Optional version string
+            
+        Returns:
+            Rule ID or identifier
+        """
+        if not self._connection:
+            raise RuntimeError("Not connected. Call connect() first.")
+        
+        # Convert schema_id to integer if it's a string
+        schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
+        
+        with self._connection.cursor() as cur:
+            cur.execute("""
+                INSERT INTO validation_rules (schema_id, version, rules)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (schema_id, version)
+                DO UPDATE SET rules = EXCLUDED.rules
+                RETURNING id
+            """, (schema_id_int, version, json.dumps(validation_rules)))
+            
+            rule_id = cur.fetchone()[0]
+            self._connection.commit()
+            return f"validation:{schema_id}" + (f":{version}" if version else "")
+    
+    def get_validation_rules(
+        self, schema_id: str, version: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve validation rules for a schema.
+        
+        Args:
+            schema_id: Schema identifier
+            version: Optional version string (if None, returns latest version)
+            
+        Returns:
+            Dictionary of validation rules, or None if not found
+        """
+        if not self._connection:
+            raise RuntimeError("Not connected. Call connect() first.")
+        
+        # Convert schema_id to integer if it's a string
+        schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
+        
+        with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
+            if version:
+                cur.execute("""
+                    SELECT rules
+                    FROM validation_rules
+                    WHERE schema_id = %s AND version = %s
+                """, (schema_id_int, version))
+            else:
+                # Get latest version (most recent by created_at)
+                cur.execute("""
+                    SELECT rules
+                    FROM validation_rules
+                    WHERE schema_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """, (schema_id_int,))
+            
+            row = cur.fetchone()
+            if row:
+                rules = row["rules"]
+                if isinstance(rules, str):
+                    return json.loads(rules)
+                return rules
         return None
 
