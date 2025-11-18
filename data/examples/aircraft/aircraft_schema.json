@@ -1,0 +1,425 @@
+{
+  "type": "object",
+  "title": "Aircraft",
+  "version": "1.0.0",
+  "properties": {
+    "metadata": {
+      "description": "Metadata when the record is processed",
+      "title": "Metadata",
+      "type": "object"
+    },
+    "REGISTRATION": {
+      "description": "Registration of the Aircraft",
+      "examples": [
+        "BHNR",
+        "LD33F"
+      ],
+      "maxLength": 10,
+      "title": "Registration",
+      "type": "string"
+    },
+    "VALID_SINCE": {
+      "description": "Start of validity",
+      "format": "date-time",
+      "title": "Valid Since",
+      "type": "string"
+    },
+    "VALID_UNTIL": {
+      "description": "End of validity",
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "AC_OPERATOR": {
+      "description": "Aircraft Operator",
+      "examples": [
+        "LD",
+        "CX"
+      ],
+      "maxLength": 3,
+      "title": "Ac Operator",
+      "type": "string"
+    },
+    "AC_OWNER": {
+      "description": "Owner of the aircraft",
+      "examples": [
+        "LD",
+        "CX"
+      ],
+      "maxLength": 3,
+      "title": "Ac Owner",
+      "type": "string"
+    },
+    "AC_SUBTYPE": {
+      "description": "Subtype of the aircraft",
+      "maxLength": 3,
+      "title": "Ac Subtype",
+      "type": "string"
+    },
+    "AC_LOGICAL_NO": {
+      "description": "Logical number of the Aircraft",
+      "title": "Ac Logical No",
+      "type": "integer"
+    },
+    "AC_STATE": {
+      "description": "Status of Aircraft(''R''=real and ''O''=overflow)",
+      "enum": [
+        "R",
+        "O"
+      ],
+      "maxLength": 1,
+      "title": "Ac State",
+      "type": "string"
+    },
+    "DRY_OPERATING_WGT": {
+      "description": "Dry Operating Weight (kg)",
+      "title": "Dry Operating Wgt",
+      "type": "integer"
+    },
+    "MAX_TAKEOFF_WGT": {
+      "description": "Max Takeoff Weight (kg)",
+      "title": "Max Takeoff Wgt",
+      "type": "integer"
+    },
+    "CARGO_CAPACITY": {
+      "description": "Cargo Capacity (kg)",
+      "title": "Cargo Capacity",
+      "type": "integer"
+    },
+    "FUEL_CAPACITY": {
+      "description": "Fuel Capacity (kg)",
+      "title": "Fuel Capacity",
+      "type": "integer"
+    },
+    "AVG_FUEL_CONSUMP": {
+      "description": "Average Fuel Consumption (kg per hour)",
+      "title": "Avg Fuel Consump",
+      "type": "integer"
+    },
+    "AC_INDEX": {
+      "description": "Aircraft index",
+      "title": "Ac Index",
+      "type": "integer"
+    },
+    "CREWSIZE_COCKPIT": {
+      "description": "Number of Cockpit Crewmembers",
+      "title": "Crewsize Cockpit",
+      "type": "integer"
+    },
+    "CREWSIZE_CABIN": {
+      "description": "Number of Cabin Crewmembers",
+      "title": "Crewsize Cabin",
+      "type": "integer"
+    },
+    "STD_VERSION": {
+      "description": "Aircraft Standard Version",
+      "maxLength": 20,
+      "title": "Std Version",
+      "type": "string"
+    },
+    "AP_RESTRICTION": {
+      "description": "Airport Restriction - e.g. Political Reason, Performance(''Y'' or ''N'')",
+      "examples": [
+        "N",
+        "Y",
+        "R"
+      ],
+      "maxLength": 1,
+      "title": "Ap Restriction",
+      "type": "string"
+    },
+    "AC_OWNER_NAME": {
+      "description": "Full Name of Owner",
+      "maxLength": 30,
+      "title": "Ac Owner Name",
+      "type": "string"
+    },
+    "AC_SUBTYPE_NAME": {
+      "description": "Full Name of Subtype",
+      "maxLength": 30,
+      "title": "Ac Subtype Name",
+      "type": "string"
+    },
+    "AC_CATEGORY": {
+      "description": "SSIM-Category of Aircraft",
+      "maxLength": 1,
+      "title": "Ac Category",
+      "type": "string"
+    },
+    "REMARK": {
+      "anyOf": [
+        {
+          "maxLength": 80,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Additional remarks",
+      "title": "Remark"
+    },
+    "FUEL_MEASURE_UNIT": {
+      "description": "Unit for fuel",
+      "maxLength": 3,
+      "title": "Fuel Measure Unit",
+      "type": "string"
+    },
+    "AC_CALLSIGN": {
+      "anyOf": [
+        {
+          "maxLength": 5,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Callsign of aircraft",
+      "title": "Ac Callsign"
+    },
+    "RADIO": {
+      "anyOf": [
+        {
+          "maxLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Radio type",
+      "title": "Radio"
+    },
+    "NOISE": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "ICAO noise chapter",
+      "title": "Noise"
+    },
+    "PHONE": {
+      "anyOf": [
+        {
+          "maxLength": 20,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Onboard mobile phone number",
+      "title": "Phone"
+    },
+    "SPECIAL_EQUIPMENT": {
+      "anyOf": [
+        {
+          "maxLength": 40,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Special equipment",
+      "title": "Special Equipment"
+    },
+    "ACARS": {
+      "anyOf": [
+        {
+          "maxLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "ACARS type",
+      "enum": [
+        "V",
+        "H",
+        "S"
+      ],
+      "title": "Acars"
+    },
+    "ALT_REG": {
+      "anyOf": [
+        {
+          "maxLength": 10,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Alternate Registration",
+      "title": "Alt Reg"
+    },
+    "RECORD_ID": {
+      "default": 0,
+      "description": "Record ID",
+      "title": "Record Id",
+      "type": "integer"
+    },
+    "LAST_UPDATE": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Timestamp of last update",
+      "title": "Last Update"
+    },
+    "LAST_UPDATE_USER_ID": {
+      "anyOf": [
+        {
+          "maxLength": 32,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "User ID of last update",
+      "title": "Last Update User Id"
+    },
+    "STD_VERSION_ALT_1": {
+      "anyOf": [
+        {
+          "maxLength": 20,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Alternative Aircraft Version 1",
+      "title": "Std Version Alt 1"
+    },
+    "STD_VERSION_ALT_2": {
+      "anyOf": [
+        {
+          "maxLength": 20,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Alternative Aircraft Version 2",
+      "title": "Std Version Alt 2"
+    },
+    "STD_VERSION_ALT_3": {
+      "anyOf": [
+        {
+          "maxLength": 20,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Alternative Aircraft Version 3",
+      "title": "Std Version Alt 3"
+    },
+    "STD_VERSION_ALT_4": {
+      "anyOf": [
+        {
+          "maxLength": 20,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Alternative Aircraft Version 4",
+      "title": "Std Version Alt 4"
+    },
+    "ILS_EQUIPMENT": {
+      "default": "I",
+      "description": "aircraft equipment supporting ILS CAT approaches(I, II, IIIa, IIIb)",
+      "enum": [
+        "I",
+        "II",
+        "IIIa",
+        "IIIb"
+      ],
+      "maxLength": 4,
+      "title": "Ils Equipment",
+      "type": "string"
+    },
+    "AUTOLAND": {
+      "default": "N",
+      "description": "Autoland capability indicator",
+      "enum": [
+        "Y",
+        "N"
+      ],
+      "maxLength": 1,
+      "title": "Autoland",
+      "type": "string"
+    },
+    "HOMEBASE": {
+      "anyOf": [
+        {
+          "maxLength": 3,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Homebase of the aircraft (IATA CODE)",
+      "title": "Homebase"
+    }
+  },
+  "required": [
+    "metadata",
+    "REGISTRATION",
+    "VALID_SINCE",
+    "VALID_UNTIL",
+    "AC_OPERATOR",
+    "AC_OWNER",
+    "AC_SUBTYPE",
+    "AC_LOGICAL_NO",
+    "AC_STATE",
+    "DRY_OPERATING_WGT",
+    "MAX_TAKEOFF_WGT",
+    "CARGO_CAPACITY",
+    "FUEL_CAPACITY",
+    "AVG_FUEL_CONSUMP",
+    "AC_INDEX",
+    "CREWSIZE_COCKPIT",
+    "CREWSIZE_CABIN",
+    "STD_VERSION",
+    "AP_RESTRICTION",
+    "AC_OWNER_NAME",
+    "AC_SUBTYPE_NAME",
+    "AC_CATEGORY",
+    "FUEL_MEASURE_UNIT"
+  ]
+}

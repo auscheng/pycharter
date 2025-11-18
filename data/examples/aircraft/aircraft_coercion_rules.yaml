@@ -1,0 +1,43 @@
+description: Coercion rules for Aircraft dataset
+version: 1.0.0
+rules:
+  REGISTRATION: coerce_to_string
+  AC_OPERATOR: coerce_to_string
+  AC_OWNER: coerce_to_string
+  AC_SUBTYPE: coerce_to_string
+  AC_STATE: coerce_to_string
+  STD_VERSION: coerce_to_string
+  AP_RESTRICTION: coerce_to_string
+  AC_OWNER_NAME: coerce_to_string
+  AC_SUBTYPE_NAME: coerce_to_string
+  AC_CATEGORY: coerce_to_string
+  FUEL_MEASURE_UNIT: coerce_to_string
+  ILS_EQUIPMENT: coerce_to_string
+  AUTOLAND: coerce_to_string
+  VALID_SINCE: coerce_to_datetime
+  VALID_UNTIL: coerce_to_datetime
+  LAST_UPDATE: coerce_to_nullable_datetime
+  AC_LOGICAL_NO: coerce_to_integer
+  DRY_OPERATING_WGT: coerce_to_integer
+  MAX_TAKEOFF_WGT: coerce_to_integer
+  CARGO_CAPACITY: coerce_to_integer
+  FUEL_CAPACITY: coerce_to_integer
+  AVG_FUEL_CONSUMP: coerce_to_integer
+  AC_INDEX: coerce_to_integer
+  CREWSIZE_COCKPIT: coerce_to_integer
+  CREWSIZE_CABIN: coerce_to_integer
+  RECORD_ID: coerce_to_integer
+  REMARK: coerce_to_nullable_string
+  AC_CALLSIGN: coerce_to_nullable_string
+  RADIO: coerce_to_nullable_string
+  PHONE: coerce_to_nullable_string
+  SPECIAL_EQUIPMENT: coerce_to_nullable_string
+  ACARS: coerce_to_nullable_string
+  ALT_REG: coerce_to_nullable_string
+  LAST_UPDATE_USER_ID: coerce_to_nullable_string
+  STD_VERSION_ALT_1: coerce_to_nullable_string
+  STD_VERSION_ALT_2: coerce_to_nullable_string
+  STD_VERSION_ALT_3: coerce_to_nullable_string
+  STD_VERSION_ALT_4: coerce_to_nullable_string
+  HOMEBASE: coerce_to_nullable_string
+  NOISE: coerce_to_nullable_integer

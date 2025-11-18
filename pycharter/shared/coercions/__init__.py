@@ -12,8 +12,16 @@ from pycharter.shared.coercions.builtin import (
     coerce_to_datetime,
     coerce_to_float,
     coerce_to_integer,
+    coerce_to_json,
     coerce_to_list,
     coerce_to_lowercase,
+    coerce_to_none,
+    coerce_to_nullable_boolean,
+    coerce_to_nullable_datetime,
+    coerce_to_nullable_float,
+    coerce_to_nullable_integer,
+    coerce_to_nullable_string,
+    coerce_to_nullable_uuid,
     coerce_to_stripped_string,
     coerce_to_string,
     coerce_to_uppercase,
@@ -22,6 +30,7 @@ from pycharter.shared.coercions.builtin import (
 
 # Registry of available coercion functions
 COERCION_REGISTRY: Dict[str, Callable[[Any], Any]] = {
+    # Standard coercions
     "coerce_to_string": coerce_to_string,
     "coerce_to_integer": coerce_to_integer,
     "coerce_to_float": coerce_to_float,
@@ -34,6 +43,16 @@ COERCION_REGISTRY: Dict[str, Callable[[Any], Any]] = {
     "coerce_to_stripped_string": coerce_to_stripped_string,
     "coerce_to_list": coerce_to_list,
     "coerce_empty_to_null": coerce_empty_to_null,
+    # New coercions
+    "coerce_to_none": coerce_to_none,
+    "coerce_to_json": coerce_to_json,
+    # Nullable variants (explicitly handle null values for optional fields)
+    "coerce_to_nullable_string": coerce_to_nullable_string,
+    "coerce_to_nullable_integer": coerce_to_nullable_integer,
+    "coerce_to_nullable_float": coerce_to_nullable_float,
+    "coerce_to_nullable_boolean": coerce_to_nullable_boolean,
+    "coerce_to_nullable_datetime": coerce_to_nullable_datetime,
+    "coerce_to_nullable_uuid": coerce_to_nullable_uuid,
 }
 
 

@@ -10,6 +10,8 @@ from pydantic import BaseModel
 
 from pycharter.json_schema_converter.converter import model_to_schema
 
+import yaml
+
 
 def to_dict(
     model: Type[BaseModel],
@@ -87,13 +89,16 @@ def to_file(
     """
     Convert a Pydantic model to a JSON Schema file.
     
+    Supports both JSON (.json) and YAML (.yaml, .yml) output formats.
+    Format is automatically determined by file extension.
+    
     Args:
         model: The Pydantic model class to convert
-        file_path: Path to the output JSON file
+        file_path: Path to the output file (JSON or YAML)
         title: Optional title for the schema
         description: Optional description for the schema
         version: Optional version string (if not provided, extracted from model)
-        indent: JSON indentation level
+        indent: JSON indentation level (ignored for YAML)
         
     Example:
         >>> from pydantic import BaseModel
@@ -101,12 +106,24 @@ def to_file(
         ...     __version__ = "1.0.0"
         ...     name: str
         ...     price: float
-        >>> to_file(Product, "product_schema.json")
+        >>> to_file(Product, "product_schema.json")  # JSON output
+        >>> to_file(Product, "product_schema.yaml")  # YAML output
     """
     schema = model_to_schema(model, title=title, description=description, version=version)
     path = Path(file_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(path, 'w') as f:
-        json.dump(schema, f, indent=indent)
+    # Determine output format
+    suffix = path.suffix.lower()
+    
+    if suffix in [".yaml", ".yml"]:
+        with open(path, 'w', encoding='utf-8') as f:
+            yaml.dump(schema, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    elif suffix == ".json":
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(schema, f, indent=indent)
+    else:
+        raise ValueError(
+            f"Unsupported file format: {suffix}. Supported formats: .json, .yaml, .yml"
+        )
 

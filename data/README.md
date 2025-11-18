@@ -1,53 +1,80 @@
 # Data Directory
 
-This directory contains a complete example demonstrating the PyCharter workflow with all components.
+This directory contains complete examples demonstrating the PyCharter workflow with all components.
 
 ## Directory Structure
 
 ```
 data/
-└── examples/          # Complete example with all components
-    ├── book_models.py              # Pydantic models (developer-defined)
-    ├── book_schema.json            # JSON Schema (generated from models)
-    ├── book_coercion_rules.json    # Coercion rules (developer + business)
-    ├── book_validation_rules.json   # Validation rules (developer + business)
-    ├── book_metadata.json          # Metadata (business-defined)
-    ├── book_contract.yaml          # Consolidated contract (all components)
+└── examples/                      # Complete examples with all components
+    ├── book/                      # Book data contract example
+    │   ├── book_models.py              # Pydantic models (developer-defined)
+    │   ├── book_schema.json            # JSON Schema (generated from models)
+    │   ├── book_coercion_rules.json    # Coercion rules (developer + business)
+    │   ├── book_validation_rules.json   # Validation rules (developer + business)
+    │   ├── book_metadata.json          # Metadata (business-defined)
+    │   └── book_contract.yaml          # Consolidated contract (all components)
+    ├── aircraft/                  # Aircraft data contract example
+    │   ├── aircraft_models.py          # Pydantic models
+    │   ├── aircraft_schema.json        # JSON Schema
+    │   ├── aircraft_schema.yaml        # JSON Schema (YAML format)
+    │   ├── aircraft_coercion_rules.json    # Coercion rules
+    │   ├── aircraft_coercion_rules.yaml    # Coercion rules (YAML format)
+    │   ├── aircraft_validation_rules.json  # Validation rules
+    │   ├── aircraft_validation_rules.yaml  # Validation rules (YAML format)
+    │   ├── aircraft_metadata.json          # Metadata
+    │   ├── aircraft_metadata.yaml          # Metadata (YAML format)
+    │   ├── aircraft_contract.yaml          # Consolidated contract
+    │   └── aircraft.csv                    # Sample data
+    ├── airports_and_geographic_information/  # Additional examples
+    │   └── airport_and_geographic_information_models.py
     └── README.md                   # Detailed documentation (this file)
 ```
 
-## Complete Example: Book Data Contract
+## Complete Examples
 
-The `examples/` directory contains a complete, working example demonstrating all aspects of the PyCharter workflow.
+The `examples/` directory contains complete, working examples demonstrating all aspects of the PyCharter workflow.
 
-### Components
+### Book Data Contract Example
 
-1. **Pydantic Models** (`book_models.py`)
+The `book/` subdirectory contains a simple, well-documented example perfect for learning PyCharter.
+
+### Aircraft Data Contract Example
+
+The `aircraft/` subdirectory contains a comprehensive real-world example with:
+- 41 fields with complex data types
+- Both JSON and YAML format files
+- Complete workflow demonstration in `notebooks/__draft1.py`
+- Sample CSV data for validation
+
+## Book Example Components
+
+1. **Pydantic Models** (`book/book_models.py`)
    - Developer-defined technical schema as Python code
    - Contains `Book` and `Author` models with nested structures
    - Demonstrates type hints, Field constraints, and validation
 
-2. **JSON Schema** (`book_schema.json`)
+2. **JSON Schema** (`book/book_schema.json`)
    - Generated from Pydantic models using `to_dict()`
    - Standard JSON Schema Draft 2020-12 format
    - Can be stored, versioned, and used across systems
 
-3. **Coercion Rules** (`book_coercion_rules.json`)
+3. **Coercion Rules** (`book/book_coercion_rules.json`)
    - Pre-validation data transformation rules
    - Defines how to convert data types (string → integer, etc.)
    - Example: `"isbn": "coerce_to_string"` ensures ISBN is always a string
 
-4. **Validation Rules** (`book_validation_rules.json`)
+4. **Validation Rules** (`book/book_validation_rules.json`)
    - Post-validation business rules
    - Custom validation beyond standard JSON Schema
    - Example: `"price": {"greater_than_or_equal_to": {"threshold": 0}}`
 
-5. **Metadata** (`book_metadata.json`)
+5. **Metadata** (`book/book_metadata.json`)
    - Business-defined ownership, governance, and business rules
    - Version information, team ownership, data retention policies
    - Business rules (pricing, inventory management)
 
-6. **Consolidated Contract** (`book_contract.yaml`)
+6. **Consolidated Contract** (`book/book_contract.yaml`)
    - All components merged into a single YAML file
    - Can be parsed by `parse_contract_file()`
    - Single source of truth for the complete contract
@@ -56,16 +83,16 @@ The `examples/` directory contains a complete, working example demonstrating all
 
 ### Separated Workflow (Recommended)
 
-1. **Developer** writes `book_models.py` (Pydantic models)
-2. **Developer** converts to `book_schema.json` using `to_dict()`
-3. **Developer + Business** define `book_coercion_rules.json` and `book_validation_rules.json`
-4. **Business** defines `book_metadata.json`
+1. **Developer** writes `book/book_models.py` (Pydantic models)
+2. **Developer** converts to `book/book_schema.json` using `to_dict()`
+3. **Developer + Business** define `book/book_coercion_rules.json` and `book/book_validation_rules.json`
+4. **Business** defines `book/book_metadata.json`
 5. **All components stored separately** in metadata store
 6. **Runtime** retrieves and combines all components for validation
 
 ### Combined Workflow (Alternative)
 
-1. All components combined into `book_contract.yaml`
+1. All components combined into `book/book_contract.yaml`
 2. Contract parsed using `parse_contract_file()`
 3. Components extracted and stored in metadata store
 4. Runtime validation uses stored components
@@ -78,7 +105,7 @@ The `examples/` directory contains a complete, working example demonstrating all
 from pathlib import Path
 from pycharter import parse_contract_file
 
-contract_path = Path("data/examples/book_contract.yaml")
+contract_path = Path("data/examples/book/book_contract.yaml")
 metadata = parse_contract_file(str(contract_path))
 
 print(metadata.schema)  # JSON Schema
@@ -94,7 +121,7 @@ from pycharter import validate_with_contract, get_model_from_contract
 
 # Simplest: validate directly from file
 result = validate_with_contract(
-    "data/examples/book_contract.yaml",
+    "data/examples/book/book_contract.yaml",
     {
         "isbn": "9780123456789",
         "title": "Python Guide",
@@ -109,7 +136,7 @@ if result.is_valid:
     print(f"Valid book: {result.data.title}")
 
 # Efficient: get model once, validate multiple times
-BookModel = get_model_from_contract("data/examples/book_contract.yaml")
+BookModel = get_model_from_contract("data/examples/book/book_contract.yaml")
 result1 = validate(BookModel, data1)
 result2 = validate(BookModel, data2)
 ```
@@ -118,10 +145,10 @@ result2 = validate(BookModel, data2)
 
 ```python
 from pycharter import to_dict
-from data.examples.book_models import Book
+from data.examples.book.book_models import Book
 
 schema = to_dict(Book)
-# Save to book_schema.json
+# Save to book/book_schema.json
 ```
 
 ### Store Components Separately
@@ -134,13 +161,13 @@ store = InMemoryMetadataStore()
 store.connect()
 
 # Load components
-with open("data/examples/book_schema.json") as f:
+with open("data/examples/book/book_schema.json") as f:
     schema = json.load(f)
-with open("data/examples/book_coercion_rules.json") as f:
+with open("data/examples/book/book_coercion_rules.json") as f:
     coercion_rules = json.load(f)["rules"]
-with open("data/examples/book_validation_rules.json") as f:
+with open("data/examples/book/book_validation_rules.json") as f:
     validation_rules = json.load(f)["rules"]
-with open("data/examples/book_metadata.json") as f:
+with open("data/examples/book/book_metadata.json") as f:
     metadata = json.load(f)
 
 # Store separately
@@ -184,12 +211,12 @@ if result.is_valid:
 
 ## File Descriptions
 
-### `book_models.py`
+### `book/book_models.py`
 Developer-defined Pydantic models that represent the technical schema. This is what developers write as Python code.
 
 **Example**:
 ```python
-from data.examples.book_models import Book, Author
+from data.examples.book.book_models import Book, Author
 
 book = Book(
     isbn="9780123456789",
@@ -201,12 +228,12 @@ book = Book(
 )
 ```
 
-### `book_schema.json`
+### `book/book_schema.json`
 JSON Schema equivalent of the Pydantic models. Generated automatically using `to_dict(Book)`.
 
 **Purpose**: Standard JSON Schema format that can be stored, versioned, and used across systems.
 
-### `book_coercion_rules.json`
+### `book/book_coercion_rules.json`
 Rules for data transformation before validation. Defines how to convert incoming data types.
 
 **Example**:
@@ -220,7 +247,7 @@ Rules for data transformation before validation. Defines how to convert incoming
 }
 ```
 
-### `book_validation_rules.json`
+### `book/book_validation_rules.json`
 Additional validation rules beyond standard JSON Schema. Custom business and technical validation.
 
 **Example**:
@@ -237,7 +264,7 @@ Additional validation rules beyond standard JSON Schema. Custom business and tec
 }
 ```
 
-### `book_metadata.json`
+### `book/book_metadata.json`
 Business-defined metadata including ownership, governance, versioning, and business rules.
 
 **Example**:
@@ -255,7 +282,7 @@ Business-defined metadata including ownership, governance, versioning, and busin
 }
 ```
 
-### `book_contract.yaml`
+### `book/book_contract.yaml`
 Consolidated contract combining all components into a single YAML file. This is the single source of truth that can be parsed by `parse_contract_file()`.
 
 **Structure**:

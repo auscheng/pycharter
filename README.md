@@ -304,7 +304,7 @@ from pycharter import validate_with_contract, get_model_from_contract, validate
 
 # Validate directly from contract file (simplest)
 result = validate_with_contract(
-    "data/examples/book_contract.yaml",
+    "data/examples/book/book_contract.yaml",
     {"isbn": "1234567890", "title": "Book", ...}
 )
 

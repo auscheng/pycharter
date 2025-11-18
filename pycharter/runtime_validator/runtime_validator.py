@@ -234,7 +234,7 @@ def get_model_from_contract(
         >>> UserModel = get_model_from_contract(contract, "User")
         >>> 
         >>> # From file
-        >>> UserModel = get_model_from_contract("data/examples/book_contract.yaml", "Book")
+        >>> UserModel = get_model_from_contract("data/examples/book/book_contract.yaml", "Book")
         >>> 
         >>> # From ContractMetadata
         >>> from pycharter import parse_contract_file

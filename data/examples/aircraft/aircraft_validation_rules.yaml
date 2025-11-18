@@ -1,0 +1,126 @@
+description: Validation rules for Aircraft dataset
+version: 1.0.0
+rules:
+  REGISTRATION:
+    max_length:
+      threshold: 10
+    non_empty_string: null
+  AC_OPERATOR:
+    max_length:
+      threshold: 3
+    non_empty_string: null
+  AC_OWNER:
+    max_length:
+      threshold: 3
+    non_empty_string: null
+  AC_SUBTYPE:
+    max_length:
+      threshold: 3
+    non_empty_string: null
+  AC_STATE:
+    only_allow:
+      allowed_values:
+      - R
+      - O
+  STD_VERSION:
+    max_length:
+      threshold: 20
+    non_empty_string: null
+  AP_RESTRICTION:
+    max_length:
+      threshold: 1
+    non_empty_string: null
+  AC_OWNER_NAME:
+    max_length:
+      threshold: 30
+    non_empty_string: null
+  AC_SUBTYPE_NAME:
+    max_length:
+      threshold: 30
+    non_empty_string: null
+  AC_CATEGORY:
+    max_length:
+      threshold: 1
+    non_empty_string: null
+  FUEL_MEASURE_UNIT:
+    max_length:
+      threshold: 3
+    non_empty_string: null
+  ILS_EQUIPMENT:
+    only_allow:
+      allowed_values:
+      - I
+      - II
+      - IIIa
+      - IIIb
+  AUTOLAND:
+    only_allow:
+      allowed_values:
+      - Y
+      - N
+  DRY_OPERATING_WGT:
+    greater_than_or_equal_to:
+      threshold: 0
+  MAX_TAKEOFF_WGT:
+    greater_than_or_equal_to:
+      threshold: 0
+  CARGO_CAPACITY:
+    greater_than_or_equal_to:
+      threshold: 0
+  FUEL_CAPACITY:
+    greater_than_or_equal_to:
+      threshold: 0
+  AVG_FUEL_CONSUMP:
+    greater_than_or_equal_to:
+      threshold: 0
+  CREWSIZE_COCKPIT:
+    greater_than_or_equal_to:
+      threshold: 0
+  CREWSIZE_CABIN:
+    greater_than_or_equal_to:
+      threshold: 0
+  NOISE:
+    greater_than_or_equal_to:
+      threshold: 0
+  REMARK:
+    max_length:
+      threshold: 80
+  AC_CALLSIGN:
+    max_length:
+      threshold: 5
+  RADIO:
+    max_length:
+      threshold: 1
+  PHONE:
+    max_length:
+      threshold: 20
+  SPECIAL_EQUIPMENT:
+    max_length:
+      threshold: 40
+  ACARS:
+    only_allow:
+      allowed_values:
+      - V
+      - H
+      - S
+  ALT_REG:
+    max_length:
+      threshold: 10
+  LAST_UPDATE_USER_ID:
+    max_length:
+      threshold: 32
+  STD_VERSION_ALT_1:
+    max_length:
+      threshold: 20
+  STD_VERSION_ALT_2:
+    max_length:
+      threshold: 20
+  STD_VERSION_ALT_3:
+    max_length:
+      threshold: 20
+  STD_VERSION_ALT_4:
+    max_length:
+      threshold: 20
+  HOMEBASE:
+    max_length:
+      threshold: 3

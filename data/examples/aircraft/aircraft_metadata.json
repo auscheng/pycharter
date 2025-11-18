@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "description": "Aircraft dataset containing aircraft registration, specifications, and operational data",
+  "created": "2024-01-01T00:00:00",
+  "source": "SCHEDOPS.AIRCRAFT database table",
+  "data_quality": {
+    "total_records": 905,
+    "last_updated": "2024-01-01T00:00:00"
+  },
+  "governance_rules": {
+    "data_retention": {
+      "days": 2555,
+      "reason": "Regulatory compliance for aircraft records"
+    },
+    "pii_fields": {
+      "fields": []
+    },
+    "sensitivity": "Internal",
+    "access_control": {
+      "read": [
+        "operations-team",
+        "data-team"
+      ],
+      "write": [
+        "operations-team"
+      ]
+    }
+  },
+  "business_rules": {
+    "validity_period": {
+      "description": "VALID_SINCE must be before VALID_UNTIL",
+      "enforced": true
+    },
+    "weight_consistency": {
+      "description": "MAX_TAKEOFF_WGT should be >= DRY_OPERATING_WGT",
+      "enforced": false
+    }
+  },
+  "schema_version": "1.0.0"
+}

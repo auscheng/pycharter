@@ -246,7 +246,7 @@ from pycharter import (
 )
 
 # 1. Parse contract
-metadata = parse_contract_file("data/examples/book_contract.yaml")
+metadata = parse_contract_file("data/examples/book/book_contract.yaml")
 
 # 2. Store in metadata store
 store = InMemoryMetadataStore()

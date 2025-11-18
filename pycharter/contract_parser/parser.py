@@ -12,11 +12,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-try:
-    import yaml
-    YAML_AVAILABLE = True
-except ImportError:
-    YAML_AVAILABLE = False
+import yaml
 
 
 class ContractMetadata:
@@ -171,10 +167,6 @@ def parse_contract_file(file_path: str) -> ContractMetadata:
     suffix = path.suffix.lower()
     
     if suffix in [".yaml", ".yml"]:
-        if not YAML_AVAILABLE:
-            raise ValueError(
-                "YAML support requires 'pyyaml' package. Install with: pip install pyyaml"
-            )
         with open(path, "r", encoding="utf-8") as f:
             contract_data = yaml.safe_load(f)
     elif suffix == ".json":

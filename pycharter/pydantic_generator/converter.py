@@ -11,6 +11,8 @@ from pydantic import BaseModel
 from pycharter.pydantic_generator.generator import schema_to_model
 from pycharter.shared.schema_parser import validate_schema
 
+import yaml
+
 
 def from_dict(schema: Dict[str, Any], model_name: str = "DynamicModel") -> Type[BaseModel]:
     """
@@ -89,8 +91,10 @@ def from_file(file_path: Union[str, Path], model_name: Optional[str] = None) -> 
     """
     Load a JSON schema from a file and convert it to a Pydantic model.
     
+    Supports both JSON (.json) and YAML (.yaml, .yml) file formats.
+    
     Args:
-        file_path: Path to the JSON schema file (must contain "version" field)
+        file_path: Path to the schema file (JSON or YAML, must contain "version" field)
         model_name: Name for the generated Pydantic model class.
                    If None, uses the file stem as the model name.
         
@@ -98,11 +102,14 @@ def from_file(file_path: Union[str, Path], model_name: Optional[str] = None) -> 
         A Pydantic model class
         
     Raises:
-        ValueError: If schema does not have a "version" field
+        FileNotFoundError: If file doesn't exist
+        ValueError: If schema does not have a "version" field or format is unsupported
         
     Example:
-        >>> # Assuming schema.json exists with version field
+        >>> # JSON file
         >>> Person = from_file("schema.json", "Person")
+        >>> # YAML file
+        >>> Person = from_file("schema.yaml", "Person")
     """
     path = Path(file_path)
     
@@ -112,8 +119,19 @@ def from_file(file_path: Union[str, Path], model_name: Optional[str] = None) -> 
     if model_name is None:
         model_name = path.stem.capitalize()
     
-    with open(path, "r", encoding="utf-8") as f:
-        schema = json.load(f)
+    # Determine file format
+    suffix = path.suffix.lower()
+    
+    if suffix in [".yaml", ".yml"]:
+        with open(path, "r", encoding="utf-8") as f:
+            schema = yaml.safe_load(f)
+    elif suffix == ".json":
+        with open(path, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+    else:
+        raise ValueError(
+            f"Unsupported file format: {suffix}. Supported formats: .json, .yaml, .yml"
+        )
     
     return from_dict(schema, model_name)
 
