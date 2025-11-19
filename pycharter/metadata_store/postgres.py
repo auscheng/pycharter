@@ -1,37 +1,22 @@
 """
 PostgreSQL Metadata Store Implementation
 
-Stores metadata in PostgreSQL tables.
+Stores metadata in PostgreSQL tables within a dedicated schema.
 """
 
 import json
 from typing import Any, Dict, List, Optional
 
-try:
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
-    POSTGRES_AVAILABLE = True
-except ImportError:
-    POSTGRES_AVAILABLE = False
-    psycopg2 = None
+import psycopg2
+from alembic.runtime.migration import MigrationContext
+from psycopg2.extras import RealDictCursor
+from sqlalchemy import create_engine
 
 from pycharter.metadata_store.client import MetadataStoreClient
 
 try:
-    from alembic.runtime.migration import MigrationContext
-    from sqlalchemy import create_engine, inspect
-    ALEMBIC_AVAILABLE = True
-except ImportError:
-    ALEMBIC_AVAILABLE = False
-    MigrationContext = None
-    create_engine = None
-    inspect = None
-
-try:
     from pycharter.config import get_database_url
-    CONFIG_AVAILABLE = True
 except ImportError:
-    CONFIG_AVAILABLE = False
     get_database_url = None
 
 
@@ -39,7 +24,7 @@ class PostgresMetadataStore(MetadataStoreClient):
     """
     PostgreSQL metadata store implementation.
     
-    Stores metadata in PostgreSQL tables:
+    Stores metadata in PostgreSQL tables within the specified schema (default: "pycharter"):
     - schemas: JSON Schema definitions
     - governance_rules: Governance rules
     - ownership: Ownership information
@@ -49,15 +34,29 @@ class PostgresMetadataStore(MetadataStoreClient):
     
     Connection string format: postgresql://[user[:password]@][host][:port][/database]
     
+    The schema namespace is automatically created if it doesn't exist when connecting.
+    However, tables must be initialized separately using 'pycharter db init' (similar to 
+    'airflow db init'). All tables are created in the specified schema (not in the public schema).
+    
     Example:
+        >>> # First, initialize the database schema
+        >>> # Run: pycharter db init postgresql://user:pass@localhost/pycharter
+        >>> 
+        >>> # Then connect
         >>> store = PostgresMetadataStore("postgresql://user:pass@localhost/pycharter")
-        >>> store.connect()
+        >>> store.connect()  # Only connects and validates schema
         >>> schema_id = store.store_schema("user", {"type": "object"}, version="1.0")
         >>> store.store_coercion_rules(schema_id, {"age": "coerce_to_integer"}, version="1.0")
         >>> store.store_validation_rules(schema_id, {"age": {"is_positive": {}}}, version="1.0")
+        
+    To use a different schema name:
+        >>> store = PostgresMetadataStore(
+        ...     "postgresql://user:pass@localhost/pycharter",
+        ...     schema_name="my_custom_schema"
+        ... )
     """
     
-    def __init__(self, connection_string: Optional[str] = None):
+    def __init__(self, connection_string: Optional[str] = None, schema_name: str = "pycharter"):
         """
         Initialize PostgreSQL metadata store.
         
@@ -68,19 +67,11 @@ class PostgresMetadataStore(MetadataStoreClient):
                               - PYCHARTER_DATABASE_URL env var
                               - pycharter.cfg config file
                               - alembic.ini config file
+            schema_name: PostgreSQL schema name to use (default: "pycharter")
         """
-        if not POSTGRES_AVAILABLE:
-            raise ImportError(
-                "psycopg2 is required for PostgresMetadataStore. "
-                "Install with: pip install psycopg2-binary"
-            )
-        
-        # If no connection string provided, try to get from configuration
-        if not connection_string and CONFIG_AVAILABLE:
+        # Try to get connection string from config if not provided
+        if not connection_string and get_database_url:
             connection_string = get_database_url()
-            if connection_string:
-                # Store it for later use
-                pass
         
         if not connection_string:
             raise ValueError(
@@ -91,41 +82,37 @@ class PostgresMetadataStore(MetadataStoreClient):
             )
         
         super().__init__(connection_string)
+        self.schema_name = schema_name
         self._connection = None
     
-    def connect(self, auto_initialize: bool = True, validate_schema_on_connect: bool = True) -> None:
+    def connect(self, validate_schema_on_connect: bool = True) -> None:
         """
-        Connect to PostgreSQL and ensure schema is initialized.
+        Connect to PostgreSQL and validate schema.
         
         Args:
-            auto_initialize: If True, automatically initialize schema if missing
-            validate_schema_on_connect: If True, validate schema after connection
+            validate_schema_on_connect: If True, validate that tables exist after connection
             
         Raises:
             ValueError: If connection_string is missing
-            RuntimeError: If schema validation fails and auto_initialize is False
+            RuntimeError: If schema validation fails (tables don't exist)
+            
+        Note:
+            This method only connects and validates. To initialize the database schema,
+            run 'pycharter db init' first (similar to 'airflow db init').
         """
         if not self.connection_string:
             raise ValueError("connection_string is required for PostgreSQL")
         
         self._connection = psycopg2.connect(self.connection_string)
+        self._ensure_schema_exists()
+        self._set_search_path()
         
-        # Check if schema is initialized using Alembic
-        if validate_schema_on_connect:
-            if not self._is_schema_initialized():
-                if auto_initialize:
-                    # Schema not initialized, but we can't auto-initialize here
-                    # User should run 'pycharter db init' first
-                    raise RuntimeError(
-                        "Database schema is not initialized. "
-                        "Please run 'pycharter db init' to initialize the schema, "
-                        "or set auto_initialize=False and validate_schema_on_connect=False."
-                    )
-                else:
-                    raise RuntimeError(
-                        "Database schema is not initialized. "
-                        "Please run 'pycharter db init' to initialize the schema."
-                    )
+        if validate_schema_on_connect and not self._is_schema_initialized():
+            raise RuntimeError(
+                "Database schema is not initialized. "
+                "Please run 'pycharter db init' to initialize the schema first.\n"
+                f"Example: pycharter db init {self.connection_string}"
+            )
     
     def disconnect(self) -> None:
         """Close PostgreSQL connection."""
@@ -133,28 +120,56 @@ class PostgresMetadataStore(MetadataStoreClient):
             self._connection.close()
             self._connection = None
     
-    def _is_schema_initialized(self) -> bool:
-        """
-        Check if the database schema is initialized.
+    # Connection management helpers
+    
+    def _ensure_schema_exists(self) -> None:
+        """Create the PostgreSQL schema namespace if it doesn't exist."""
+        if not self._connection:
+            return
         
-        Returns:
-            True if schema is initialized, False otherwise
-        """
+        with self._connection.cursor() as cur:
+            cur.execute(f'CREATE SCHEMA IF NOT EXISTS "{self.schema_name}"')
+            self._connection.commit()
+    
+    def _set_search_path(self) -> None:
+        """Set search_path to use the schema."""
+        with self._connection.cursor() as cur:
+            cur.execute(f'SET search_path TO "{self.schema_name}", public')
+            self._connection.commit()
+    
+    def _is_schema_initialized(self) -> bool:
+        """Check if the database schema is initialized."""
         if not self._connection:
             return False
         
         try:
-            # Check if required tables exist
             with self._connection.cursor() as cur:
                 cur.execute("""
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
-                        WHERE table_name = 'schemas'
+                        WHERE table_schema = %s AND table_name = 'schemas'
                     )
-                """)
+                """, (self.schema_name,))
                 return cur.fetchone()[0]
         except Exception:
             return False
+    
+    def _require_connection(self) -> None:
+        """Raise error if not connected."""
+        if not self._connection:
+            raise RuntimeError("Not connected. Call connect() first.")
+    
+    def _parse_jsonb(self, value: Any) -> Dict[str, Any]:
+        """Parse JSONB value (psycopg2 may return dict or str)."""
+        if isinstance(value, str):
+            return json.loads(value)
+        return value if value is not None else {}
+    
+    def _table_name(self, table: str) -> str:
+        """Get fully qualified table name."""
+        return f'"{self.schema_name}".{table}'
+    
+    # Schema info
     
     def get_schema_info(self) -> Dict[str, Any]:
         """
@@ -168,14 +183,12 @@ class PostgresMetadataStore(MetadataStoreClient):
                 "message": str
             }
         """
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         initialized = self._is_schema_initialized()
-        
-        # Try to get Alembic revision if available
         revision = None
-        if ALEMBIC_AVAILABLE and initialized:
+        
+        if initialized:
             try:
                 engine = create_engine(self.connection_string)
                 with engine.connect() as conn:
@@ -190,6 +203,8 @@ class PostgresMetadataStore(MetadataStoreClient):
             "message": f"Schema initialized: {initialized}" + (f" (revision: {revision})" if revision else "")
         }
     
+    # Schema operations
+    
     def store_schema(
         self,
         schema_name: str,
@@ -201,21 +216,20 @@ class PostgresMetadataStore(MetadataStoreClient):
         
         Args:
             schema_name: Name/identifier for the schema
-            schema: JSON Schema dictionary (must contain "version" field or it will be added)
+            schema: JSON Schema dictionary
             version: Required version string (must match schema["version"] if present)
             
         Returns:
-            Schema ID
+            Schema ID as string
             
         Raises:
             ValueError: If version is missing or doesn't match schema version
         """
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         # Ensure schema has version
         if "version" not in schema:
-            schema = dict(schema)  # Make a copy
+            schema = dict(schema)
             schema["version"] = version
         elif schema.get("version") != version:
             raise ValueError(
@@ -224,8 +238,8 @@ class PostgresMetadataStore(MetadataStoreClient):
             )
         
         with self._connection.cursor() as cur:
-            cur.execute("""
-                INSERT INTO schemas (name, version, schema_data)
+            cur.execute(f"""
+                INSERT INTO {self._table_name("schemas")} (name, version, schema_data)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (name, version) 
                 DO UPDATE SET schema_data = EXCLUDED.schema_data
@@ -248,52 +262,46 @@ class PostgresMetadataStore(MetadataStoreClient):
             
         Returns:
             Schema dictionary with version included, or None if not found
-            
-        Raises:
-            ValueError: If schema is found but doesn't have a version field
         """
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
             if version:
                 cur.execute(
-                    "SELECT schema_data, version FROM schemas WHERE id = %s AND version = %s",
+                    f'SELECT schema_data, version FROM {self._table_name("schemas")} '
+                    'WHERE id = %s AND version = %s',
                     (schema_id, version),
                 )
             else:
                 cur.execute(
-                    "SELECT schema_data, version FROM schemas WHERE id = %s ORDER BY version DESC LIMIT 1",
+                    f'SELECT schema_data, version FROM {self._table_name("schemas")} '
+                    'WHERE id = %s ORDER BY version DESC LIMIT 1',
                     (schema_id,),
                 )
+            
             row = cur.fetchone()
-            if row:
-                # JSONB is already parsed as dict by psycopg2
-                schema_data = row["schema_data"]
-                stored_version = row.get("version")
-                
-                if isinstance(schema_data, str):
-                    schema_data = json.loads(schema_data)
-                
-                # Ensure schema has version
-                if "version" not in schema_data:
-                    schema_data = dict(schema_data)  # Make a copy
-                    schema_data["version"] = stored_version or "1.0.0"
-                
-                # Validate schema has version
-                if "version" not in schema_data:
-                    raise ValueError(f"Schema {schema_id} does not have a version field")
-                
-                return schema_data
-        return None
+            if not row:
+                return None
+            
+            schema_data = self._parse_jsonb(row["schema_data"])
+            stored_version = row.get("version")
+            
+            # Ensure schema has version
+            if "version" not in schema_data:
+                schema_data = dict(schema_data)
+                schema_data["version"] = stored_version or "1.0.0"
+            
+            return schema_data
     
     def list_schemas(self) -> List[Dict[str, Any]]:
         """List all stored schemas."""
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT id, name, version FROM schemas ORDER BY name, version")
+            cur.execute(
+                f'SELECT id, name, version FROM {self._table_name("schemas")} '
+                'ORDER BY name, version'
+            )
             return [
                 {
                     "id": str(row["id"]),
@@ -303,6 +311,8 @@ class PostgresMetadataStore(MetadataStoreClient):
                 for row in cur.fetchall()
             ]
     
+    # Governance rules
+    
     def store_governance_rule(
         self,
         rule_name: str,
@@ -310,12 +320,11 @@ class PostgresMetadataStore(MetadataStoreClient):
         schema_id: Optional[str] = None,
     ) -> str:
         """Store a governance rule."""
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor() as cur:
-            cur.execute("""
-                INSERT INTO governance_rules (name, rule_definition, schema_id)
+            cur.execute(f"""
+                INSERT INTO {self._table_name("governance_rules")} (name, rule_definition, schema_id)
                 VALUES (%s, %s, %s)
                 RETURNING id
             """, (rule_name, json.dumps(rule_definition), schema_id))
@@ -328,31 +337,32 @@ class PostgresMetadataStore(MetadataStoreClient):
         self, schema_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Retrieve governance rules."""
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
             if schema_id:
-                cur.execute("""
+                cur.execute(f"""
                     SELECT id, name, rule_definition, schema_id
-                    FROM governance_rules
+                    FROM {self._table_name("governance_rules")}
                     WHERE schema_id = %s
                 """, (schema_id,))
             else:
-                cur.execute("""
+                cur.execute(f"""
                     SELECT id, name, rule_definition, schema_id
-                    FROM governance_rules
+                    FROM {self._table_name("governance_rules")}
                 """)
             
             return [
                 {
                     "id": str(row["id"]),
                     "name": row["name"],
-                    "definition": json.loads(row["rule_definition"]) if isinstance(row["rule_definition"], str) else row["rule_definition"],
+                    "definition": self._parse_jsonb(row["rule_definition"]),
                     "schema_id": str(row["schema_id"]) if row["schema_id"] else None,
                 }
                 for row in cur.fetchall()
             ]
+    
+    # Ownership
     
     def store_ownership(
         self,
@@ -362,12 +372,11 @@ class PostgresMetadataStore(MetadataStoreClient):
         additional_info: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Store ownership information."""
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor() as cur:
-            cur.execute("""
-                INSERT INTO ownership (resource_id, owner, team, additional_info)
+            cur.execute(f"""
+                INSERT INTO {self._table_name("ownership")} (resource_id, owner, team, additional_info)
                 VALUES (%s, %s, %s, %s)
                 ON CONFLICT (resource_id)
                 DO UPDATE SET
@@ -382,29 +391,26 @@ class PostgresMetadataStore(MetadataStoreClient):
     
     def get_ownership(self, resource_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve ownership information."""
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
+            cur.execute(f"""
                 SELECT owner, team, additional_info
-                FROM ownership
+                FROM {self._table_name("ownership")}
                 WHERE resource_id = %s
             """, (resource_id,))
             
             row = cur.fetchone()
-            if row:
-                additional_info = row.get("additional_info")
-                if isinstance(additional_info, str):
-                    additional_info = json.loads(additional_info)
-                elif additional_info is None:
-                    additional_info = {}
-                return {
-                    "owner": row["owner"],
-                    "team": row.get("team"),
-                    "additional_info": additional_info,
-                }
-        return None
+            if not row:
+                return None
+            
+            return {
+                "owner": row["owner"],
+                "team": row.get("team"),
+                "additional_info": self._parse_jsonb(row.get("additional_info")),
+            }
+    
+    # Metadata
     
     def store_metadata(
         self,
@@ -413,12 +419,11 @@ class PostgresMetadataStore(MetadataStoreClient):
         resource_type: str = "schema",
     ) -> str:
         """Store additional metadata."""
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor() as cur:
-            cur.execute("""
-                INSERT INTO metadata (resource_id, resource_type, metadata_data)
+            cur.execute(f"""
+                INSERT INTO {self._table_name("metadata")} (resource_id, resource_type, metadata_data)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (resource_id, resource_type)
                 DO UPDATE SET metadata_data = EXCLUDED.metadata_data
@@ -433,23 +438,22 @@ class PostgresMetadataStore(MetadataStoreClient):
         self, resource_id: str, resource_type: str = "schema"
     ) -> Optional[Dict[str, Any]]:
         """Retrieve metadata."""
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
+            cur.execute(f"""
                 SELECT metadata_data
-                FROM metadata
+                FROM {self._table_name("metadata")}
                 WHERE resource_id = %s AND resource_type = %s
             """, (resource_id, resource_type))
             
             row = cur.fetchone()
-            if row:
-                metadata_data = row["metadata_data"]
-                if isinstance(metadata_data, str):
-                    return json.loads(metadata_data)
-                return metadata_data
-        return None
+            if not row:
+                return None
+            
+            return self._parse_jsonb(row["metadata_data"])
+    
+    # Coercion rules
     
     def store_coercion_rules(
         self,
@@ -468,15 +472,13 @@ class PostgresMetadataStore(MetadataStoreClient):
         Returns:
             Rule ID or identifier
         """
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
-        # Convert schema_id to integer if it's a string
         schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
         
         with self._connection.cursor() as cur:
-            cur.execute("""
-                INSERT INTO coercion_rules (schema_id, version, rules)
+            cur.execute(f"""
+                INSERT INTO {self._table_name("coercion_rules")} (schema_id, version, rules)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (schema_id, version)
                 DO UPDATE SET rules = EXCLUDED.rules
@@ -500,36 +502,33 @@ class PostgresMetadataStore(MetadataStoreClient):
         Returns:
             Dictionary of coercion rules, or None if not found
         """
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
-        # Convert schema_id to integer if it's a string
         schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
             if version:
-                cur.execute("""
+                cur.execute(f"""
                     SELECT rules
-                    FROM coercion_rules
+                    FROM {self._table_name("coercion_rules")}
                     WHERE schema_id = %s AND version = %s
                 """, (schema_id_int, version))
             else:
-                # Get latest version (most recent by created_at)
-                cur.execute("""
+                cur.execute(f"""
                     SELECT rules
-                    FROM coercion_rules
+                    FROM {self._table_name("coercion_rules")}
                     WHERE schema_id = %s
                     ORDER BY created_at DESC
                     LIMIT 1
                 """, (schema_id_int,))
             
             row = cur.fetchone()
-            if row:
-                rules = row["rules"]
-                if isinstance(rules, str):
-                    return json.loads(rules)
-                return rules
-        return None
+            if not row:
+                return None
+            
+            return self._parse_jsonb(row["rules"])
+    
+    # Validation rules
     
     def store_validation_rules(
         self,
@@ -548,15 +547,13 @@ class PostgresMetadataStore(MetadataStoreClient):
         Returns:
             Rule ID or identifier
         """
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
-        # Convert schema_id to integer if it's a string
         schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
         
         with self._connection.cursor() as cur:
-            cur.execute("""
-                INSERT INTO validation_rules (schema_id, version, rules)
+            cur.execute(f"""
+                INSERT INTO {self._table_name("validation_rules")} (schema_id, version, rules)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (schema_id, version)
                 DO UPDATE SET rules = EXCLUDED.rules
@@ -580,34 +577,28 @@ class PostgresMetadataStore(MetadataStoreClient):
         Returns:
             Dictionary of validation rules, or None if not found
         """
-        if not self._connection:
-            raise RuntimeError("Not connected. Call connect() first.")
+        self._require_connection()
         
-        # Convert schema_id to integer if it's a string
         schema_id_int = int(schema_id) if isinstance(schema_id, str) else schema_id
         
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
             if version:
-                cur.execute("""
+                cur.execute(f"""
                     SELECT rules
-                    FROM validation_rules
+                    FROM {self._table_name("validation_rules")}
                     WHERE schema_id = %s AND version = %s
                 """, (schema_id_int, version))
             else:
-                # Get latest version (most recent by created_at)
-                cur.execute("""
+                cur.execute(f"""
                     SELECT rules
-                    FROM validation_rules
+                    FROM {self._table_name("validation_rules")}
                     WHERE schema_id = %s
                     ORDER BY created_at DESC
                     LIMIT 1
                 """, (schema_id_int,))
             
             row = cur.fetchone()
-            if row:
-                rules = row["rules"]
-                if isinstance(rules, str):
-                    return json.loads(rules)
-                return rules
-        return None
-
+            if not row:
+                return None
+            
+            return self._parse_jsonb(row["rules"])

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycharter"
-version = "0.0.1"
+version = "0.0.2"
 description = "A Python package for data contract management with five core services: contract parsing, metadata storage, Pydantic generation, JSON Schema conversion, and runtime validation"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -33,10 +33,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/auscheng/schemantic"
-Documentation = "https://github.com/auscheng/schemantic#readme"
-Repository = "https://github.com/auscheng/schemantic"
-Issues = "https://github.com/auscheng/schemantic/issues"
+Homepage = "https://github.com/auscheng/pycharter"
+Documentation = "https://github.com/auscheng/pycharter#readme"
+Repository = "https://github.com/auscheng/pycharter"
+Issues = "https://github.com/auscheng/pycharter/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -49,8 +49,7 @@ dev = [
     "twine>=4.0.0",
     "jupyterlab>=4.0.0",
     "ipykernel>=6.0.0",
-    "numpy>=1.24.0",
-    "pandas>=2.0.0",
+    "psycopg2-binary>=2.9.0",
 ]
 
 [tool.setuptools]
