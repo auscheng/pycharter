@@ -1,6 +1,29 @@
 # PyCharter Examples
 
-This directory contains focused examples demonstrating each of PyCharter's five core services and a complete workflow example.
+This directory contains focused examples demonstrating each of PyCharter's core services and complete workflow examples.
+
+## Complete Developer Journey (Recommended Start)
+
+### Complete Journey (`00_complete_journey.py`)
+**The recommended starting point** - Shows the complete developer workflow from Pydantic model to runtime validation:
+
+**The Complete Journey:**
+1. **Start with a Pydantic model** (developer-defined) - Define your data model using Pydantic
+2. **Convert it to JSON Schema** - Use `to_dict()` to convert Pydantic model to JSON Schema
+3. **Parse a (partial) data contract** - Parse metadata, coercion rules, validation rules, governance rules from contract files
+4. **Store into metadata store** - Store schema, metadata, ownership, coercion rules, validation rules, governance rules
+5. **Retrieve and rebuild consolidated contract** - Use `build_contract_from_store()` to rebuild complete contract
+6. **Convert to comprehensive Pydantic model** - Use `get_model_from_contract()` to generate model with all rules
+7. **Perform runtime validation** - Use `validate()` with the comprehensive model for production validation
+8. **Database initialization** - Instructions for initializing/upgrading database schema
+
+**Run**: `python examples/00_complete_journey.py`
+
+This example demonstrates the **recommended workflow** for developers working with PyCharter. It shows how to:
+- Start with developer-defined Pydantic models
+- Enhance them with business rules from data contracts
+- Store everything in a metadata store for centralized management
+- Rebuild comprehensive contracts for runtime validation
 
 ## Service Examples
 
@@ -59,13 +82,7 @@ Each example focuses on a specific service:
 
 **Run**: `python examples/05_runtime_validator.py`
 
-## Complete Workflow
-
-### Complete Workflow (`complete_workflow.py`)
-Demonstrates all five services working together in a complete data production journey:
-1. Parse contract → 2. Store metadata → 3. Generate model → 4. Convert schema → 5. Validate data
-
-**Run**: `python examples/complete_workflow.py`
+## Additional Workflow Examples
 
 ### Separated Workflow (`06_separated_workflow.py`)
 Demonstrates the improved workflow where schemas, metadata, and coercion/validation rules are stored separately:
@@ -174,19 +191,19 @@ See `data/README.md` for detailed information about the data structure and forma
 
 ```bash
 # From project root
+python examples/00_complete_journey.py  # Recommended: Complete developer journey
 python examples/01_contract_parser.py
 python examples/02_metadata_store.py
 python examples/03_pydantic_generator.py
 python examples/04_json_schema_converter.py
 python examples/05_runtime_validator.py
-python examples/complete_workflow.py
 ```
 
 ### Run All Examples
 
 ```bash
 # Run each example script
-for script in examples/0*.py examples/complete_workflow.py; do
+for script in examples/0*.py; do
     python "$script"
 done
 ```
@@ -216,10 +233,11 @@ Each example script provides:
 
 ## Next Steps
 
-1. **Explore individual services** - Run each numbered example to understand specific services
-2. **See the complete workflow** - Run `complete_workflow.py` to see all services together
-3. **Modify examples** - Adapt examples to your use case
-4. **Read the docs** - Check the main `README.md` for full documentation
+1. **Start with the complete journey** - Run `00_complete_journey.py` to see the full developer workflow
+2. **Explore individual services** - Run each numbered example (01-05) to understand specific services
+3. **See additional workflows** - Run `06_separated_workflow.py` and `07_contract_builder.py` for alternative patterns
+4. **Modify examples** - Adapt examples to your use case
+5. **Read the docs** - Check the main `README.md` for full documentation
 
 ## Notes
 
