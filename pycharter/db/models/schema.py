@@ -22,6 +22,7 @@ class SchemaModel(Base):
     
     __table_args__ = (
         UniqueConstraint("name", "version", name="uq_schemas_name_version"),
+        {"schema": "pycharter"},
     )
     
     # Relationships

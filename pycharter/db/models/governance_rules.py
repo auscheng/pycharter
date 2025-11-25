@@ -17,8 +17,12 @@ class GovernanceRulesModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     rule_definition = Column(JSON, nullable=False)
-    schema_id = Column(Integer, ForeignKey("schemas.id"), nullable=True)
+    schema_id = Column(Integer, ForeignKey("pycharter.schemas.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (
+        {"schema": "pycharter"},
+    )
     
     # Relationships
     schema = relationship("SchemaModel", back_populates="governance_rules")

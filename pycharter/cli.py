@@ -31,6 +31,7 @@ def main():
         cmd_downgrade,
         cmd_current,
         cmd_history,
+        cmd_stamp,
     )
     
     # init
@@ -56,6 +57,11 @@ def main():
     history_parser = db_subparsers.add_parser("history", help="Show migration history")
     history_parser.add_argument("database_url", nargs="?", help="PostgreSQL connection string (optional if PYCHARTER_DATABASE_URL is set)")
     
+    # stamp
+    stamp_parser = db_subparsers.add_parser("stamp", help="Stamp database with a specific revision (without running migrations)")
+    stamp_parser.add_argument("revision", nargs="?", default="head", help="Revision to stamp (default: head)")
+    stamp_parser.add_argument("database_url", nargs="?", help="PostgreSQL connection string (optional if PYCHARTER_DATABASE_URL is set)")
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -77,6 +83,8 @@ def main():
             return cmd_current(args.database_url)
         elif args.db_command == "history":
             return cmd_history(args.database_url)
+        elif args.db_command == "stamp":
+            return cmd_stamp(args.database_url, args.revision)
         else:
             db_parser.print_help()
             return 1

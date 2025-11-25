@@ -21,5 +21,6 @@ class MetadataModel(Base):
     
     __table_args__ = (
         UniqueConstraint("resource_id", "resource_type", name="uq_metadata_resource"),
+        {"schema": "pycharter"},
     )
 

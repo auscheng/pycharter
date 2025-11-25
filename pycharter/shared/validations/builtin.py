@@ -192,26 +192,30 @@ def is_positive(threshold: int = 0):
     return _is_positive
 
 
-def non_empty_string(value: Any, info: ValidationInfo) -> Any:
+def non_empty_string():
     """
-    Validator to ensure string is not empty.
+    Factory function to create a non_empty_string validator.
     
-    Args:
-        value: The value to validate
-        info: Validation info
-        
     Returns:
-        Validated value
-        
-    Raises:
-        ValidationError: If string is empty
+        Validation function
     """
-    if value is None:
+    def _non_empty_string(value: Any, info: ValidationInfo) -> Any:
+        """
+        Validate that string is not empty.
+        
+        Returns:
+            Validated value
+            
+        Raises:
+            ValidationError: If string is empty
+        """
+        if value is None:
+            return value
+        if isinstance(value, str):
+            if len(value.strip()) == 0:
+                raise ValueError("String must not be empty")
         return value
-    if isinstance(value, str):
-        if len(value.strip()) == 0:
-            raise ValueError("String must not be empty")
-    return value
+    return _non_empty_string
 
 
 def no_special_characters():

@@ -108,7 +108,16 @@ def cmd_init(database_url: Optional[str] = None, force: bool = False) -> int:
         # Check if database is already initialized
         engine = create_engine(db_url)
         inspector = inspect(engine)
-        existing_tables = inspector.get_table_names()
+        
+        # Create the pycharter schema if it doesn't exist
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text('CREATE SCHEMA IF NOT EXISTS "pycharter"'))
+            conn.commit()
+        print("✓ Created 'pycharter' schema (if it didn't exist)")
+        
+        # Check tables in the pycharter schema
+        existing_tables = inspector.get_table_names(schema="pycharter")
         
         # Check if we have any migrations
         versions_dir = os.path.join(
@@ -119,8 +128,59 @@ def cmd_init(database_url: Optional[str] = None, force: bool = False) -> int:
         has_migrations = os.path.exists(versions_dir) and os.listdir(versions_dir)
         
         # Check if alembic_version table exists (indicates database is versioned)
-        has_alembic_version = "alembic_version" in existing_tables
+        # Note: alembic_version is typically in public schema, but we'll check both
+        public_tables = inspector.get_table_names(schema="public")
+        has_alembic_version = "alembic_version" in public_tables or "alembic_version" in existing_tables
         has_schemas_table = "schemas" in existing_tables
+        
+        # Check for migration mismatch: database revision doesn't match any migration file
+        if has_alembic_version and has_migrations:
+            from alembic.script import ScriptDirectory
+            
+            # Get current database revision
+            # Note: alembic_version is typically in public schema (Alembic convention)
+            with engine.connect() as conn:
+                # Try public schema first (Alembic default), then pycharter schema
+                try:
+                    result = conn.execute(text("SELECT version_num FROM alembic_version"))
+                except Exception:
+                    # Try pycharter schema
+                    result = conn.execute(text('SELECT version_num FROM "pycharter".alembic_version'))
+                db_revision = result.fetchone()
+                if db_revision:
+                    db_revision = db_revision[0]
+                    
+                    # Check if this revision exists in migration files
+                    script = ScriptDirectory.from_config(config)
+                    try:
+                        script.get_revision(db_revision)
+                        revision_exists = True
+                    except Exception:
+                        revision_exists = False
+                    
+                    if not revision_exists:
+                        print(f"❌ Error: Migration mismatch detected!")
+                        print(f"   Database revision: {db_revision}")
+                        print(f"   This revision does not exist in migration files.")
+                        print()
+                        print("   This typically happens when:")
+                        print("   - Migration files were deleted from the codebase")
+                        print("   - Database was initialized on a different machine with different migrations")
+                        print("   - Code was pulled from git but database wasn't updated")
+                        print()
+                        print("   Solutions:")
+                        print("   1. If you want to reset the database:")
+                        print("      - Drop and recreate the database")
+                        print("      - Run 'pycharter db init' again")
+                        print()
+                        print("   2. If you want to keep the database:")
+                        print("      - Find the correct migration file that matches your database schema")
+                        print("      - Stamp the database: pycharter db stamp <revision>")
+                        print("      - Or manually update alembic_version table to match an existing migration")
+                        print()
+                        print("   3. If you want to force initialization (will recreate tables):")
+                        print("      - Use --force flag: pycharter db init --force")
+                        return 1
         
         # If tables exist but no alembic_version, we can still initialize Alembic tracking
         if has_schemas_table and has_alembic_version and not force:
@@ -152,7 +212,7 @@ def cmd_init(database_url: Optional[str] = None, force: bool = False) -> int:
                 # Create migration with autogenerate - this will detect existing tables
                 # We need to bypass the "not up to date" check by ensuring alembic_version exists
                 # First, create alembic_version table manually if it doesn't exist
-                from sqlalchemy import text
+                # Note: alembic_version is typically in public schema (Alembic convention)
                 with engine.connect() as conn:
                     conn.execute(text("""
                         CREATE TABLE IF NOT EXISTS alembic_version (
@@ -328,6 +388,54 @@ def cmd_current(database_url: Optional[str] = None) -> int:
         return 1
 
 
+def cmd_stamp(database_url: Optional[str] = None, revision: str = "head") -> int:
+    """
+    Stamp the database with a specific revision without running migrations.
+    
+    Useful for fixing migration mismatches or marking the database as being at a specific revision.
+    
+    Equivalent to: alembic stamp <revision>
+    
+    Args:
+        database_url: Optional PostgreSQL connection string
+        revision: Revision to stamp (default: "head")
+        
+    Returns:
+        Exit code (0 for success, 1 for failure)
+    """
+    if not ALEMBIC_AVAILABLE:
+        print("❌ Error: alembic and sqlalchemy are required. Install with: pip install alembic sqlalchemy")
+        return 1
+    
+    try:
+        # Get database URL from argument or configuration
+        db_url = database_url or get_database_url()
+        if not db_url:
+            print("❌ Error: Database URL required.")
+            print("   Provide as argument: pycharter db stamp <revision> <database_url>")
+            print("   Or set environment variable: PYCHARTER__DATABASE__SQL_ALCHEMY_CONN or PYCHARTER_DATABASE_URL")
+            print("   Or configure in pycharter.cfg or alembic.ini")
+            return 1
+        
+        if database_url:
+            set_database_url(database_url)
+        
+        config = get_alembic_config(db_url)
+        
+        # Stamp database
+        print(f"Stamping database with revision: {revision}...")
+        command.stamp(config, revision)
+        
+        print(f"✓ Database stamped successfully with revision: {revision}")
+        return 0
+        
+    except Exception as e:
+        print(f"❌ Error stamping database: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
 def cmd_history(database_url: Optional[str] = None) -> int:
     """
     Show migration history.
@@ -379,6 +487,9 @@ Examples:
   
   # Show migration history
   pycharter db history
+  
+  # Stamp database with specific revision (fix migration mismatches)
+  pycharter db stamp c543be6dd922 postgresql://user:pass@localhost/pycharter
         """
     )
     
@@ -407,6 +518,11 @@ Examples:
     history_parser = subparsers.add_parser("history", help="Show migration history")
     history_parser.add_argument("database_url", nargs="?", help="PostgreSQL connection string (optional if PYCHARTER_DATABASE_URL is set)")
     
+    # stamp command
+    stamp_parser = subparsers.add_parser("stamp", help="Stamp database with a specific revision (without running migrations)")
+    stamp_parser.add_argument("revision", nargs="?", default="head", help="Revision to stamp (default: head)")
+    stamp_parser.add_argument("database_url", nargs="?", help="PostgreSQL connection string (optional if PYCHARTER_DATABASE_URL is set)")
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -423,6 +539,8 @@ Examples:
         return cmd_current(args.database_url)
     elif args.command == "history":
         return cmd_history(args.database_url)
+    elif args.command == "stamp":
+        return cmd_stamp(args.database_url, args.revision)
     else:
         parser.print_help()
         return 1

@@ -261,11 +261,9 @@ def schema_to_model(
                                 # Handle is_positive with optional threshold
                                 threshold = params.get("threshold", 0)
                                 validation_func = validation_factory(threshold)
-                            elif validator_name == "non_empty_string":
-                                # Non-empty string doesn't need config
-                                validation_func = validation_factory
                             else:
-                                # For validations that don't need config
+                                # For validations that don't need config (like non_empty_string, no_capital_characters, is_email, is_url)
+                                # Call factory with no args
                                 validation_func = validation_factory()
                             
                             if field_name not in validation_validators:
@@ -356,7 +354,7 @@ def schema_to_model(
                         pattern = validation_config.get("pattern", "")
                         validation_func = validation_factory(pattern)
                     else:
-                        # For validations that don't need config (like no_capital_characters, is_email, is_url)
+                        # For validations that don't need config (like non_empty_string, no_capital_characters, is_email, is_url)
                         # Call factory with no args
                         validation_func = validation_factory()
                     
