@@ -24,6 +24,12 @@ from pycharter.db.models import (
     MetadataModel,
     OwnershipModel,
     GovernanceRulesModel,
+    SystemModel,
+    DataFeedModel,
+    BusinessOwnerModel,
+    DomainModel,
+    TeamModel,
+    DataContractModel,
 )
 
 # Import all models so Alembic can detect them

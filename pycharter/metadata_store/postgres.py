@@ -423,7 +423,7 @@ class PostgresMetadataStore(MetadataStoreClient):
         
         with self._connection.cursor() as cur:
             cur.execute(f"""
-                INSERT INTO {self._table_name("metadata")} (resource_id, resource_type, metadata_data)
+                INSERT INTO {self._table_name("metadata_record")} (resource_id, resource_type, metadata_data)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (resource_id, resource_type)
                 DO UPDATE SET metadata_data = EXCLUDED.metadata_data
@@ -443,7 +443,7 @@ class PostgresMetadataStore(MetadataStoreClient):
         with self._connection.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(f"""
                 SELECT metadata_data
-                FROM {self._table_name("metadata")}
+                FROM {self._table_name("metadata_record")}
                 WHERE resource_id = %s AND resource_type = %s
             """, (resource_id, resource_type))
             
