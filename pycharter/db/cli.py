@@ -489,7 +489,7 @@ Examples:
   pycharter db history
   
   # Stamp database with specific revision (fix migration mismatches)
-  pycharter db stamp c543be6dd922 postgresql://user:pass@localhost/pycharter
+  pycharter db stamp 435e5a4670a9 postgresql://user:pass@localhost/pycharter
         """
     )
     

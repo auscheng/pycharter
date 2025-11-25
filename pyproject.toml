@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycharter"
-version = "0.0.2"
+version = "0.0.3"
 description = "A Python package for data contract management with five core services: contract parsing, metadata storage, Pydantic generation, JSON Schema conversion, and runtime validation"
 readme = "README.md"
 requires-python = ">=3.10"
